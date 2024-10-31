@@ -1,7 +1,7 @@
 package com.linguagen.backend.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.linguagen.backend.entity.Question;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

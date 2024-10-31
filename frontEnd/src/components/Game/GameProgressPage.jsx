@@ -22,23 +22,31 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
 
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 
+
+
+    // axios 인스턴스 생성
+    const api = axios.create({
+        baseURL: 'http://localhost:5173',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+
+    // sessionStorage에서 사용자 ID 가져오기
+    const userId = sessionStorage.getItem('id');
+
     // 문제 데이터 가져오기
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
                 setLoading(true);
-                const { data } = await axios.get('http://localhost:8085/api/questions/random', {
-                    params: {
-                        count: 10
-                    },
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                    withCredentials: true
-                });
 
+                if (!userId) throw new Error("User ID not found in sessionStorage.");
+
+                const { data } = await api.get(`/api/questions/user/${userId}`);
                 console.log('Raw data:', data);
 
+                // 데이터 변환 부분에 idx 추가
                 const formattedQuestions = data.map(q => {
                     if (q.questionFormat === 'MULTIPLE_CHOICE') {
                         const correctIndex = q.choices.findIndex(
@@ -46,6 +54,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                         );
 
                         return {
+                            idx: q.idx,
                             type: 'multipleChoice',
                             question: q.question,
                             options: q.choices.map(choice => choice.choiceText),
@@ -55,6 +64,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                         };
                     } else if (q.questionFormat === 'SHORT_ANSWER') {
                         return {
+                            idx: q.idx,
                             type: 'shortAnswer',
                             question: q.question,
                             correctAnswer: q.correctAnswer,
@@ -62,14 +72,13 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                             explanation: q.explanation
                         };
                     }
-                    return null;
-                }).filter(q => q !== null);
+                });
 
                 console.log('Formatted questions:', formattedQuestions);
                 setQuestions(formattedQuestions);
-            } catch (error) {
-                console.error('Fetch error:', error);
-                setError(error.response?.data?.message || error.message);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                setError(err.response?.data?.message || err.message);
             } finally {
                 setLoading(false);
             }
@@ -80,12 +89,22 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
 
     const currentQuestion = questions[currentQuestionIndex];
 
-    const handleAnswer = useCallback((answer) => {
+    const handleAnswer = useCallback((answerIndex) => {
         let isCorrect = false;
-        if (currentQuestion.type === 'multipleChoice') {
-            isCorrect = answer === currentQuestion.correctAnswer;
+        let answer;  // 서버로 보낼 선택지 레이블 ('a', 'b', 'c', 'd')
+
+        if (currentQuestion.type === 'multipleChoice' && currentQuestion.options && currentQuestion.options.length > answerIndex) {
+            // 인덱스를 a, b, c, d와 매핑
+            const optionsMap = ['a', 'b', 'c', 'd'];
+            answer = optionsMap[answerIndex];  // 선택한 답안의 레이블 가져오기 ('a', 'b', 'c', 'd')
+
+            isCorrect = answerIndex === currentQuestion.correctAnswer;
         } else if (currentQuestion.type === 'shortAnswer') {
-            isCorrect = answer.toLowerCase().trim() === currentQuestion.correctAnswer.toLowerCase().trim();
+            answer = answerIndex.trim();  // 주관식의 경우 사용자가 입력한 답안 그대로 사용
+            isCorrect = answer.toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+        } else {
+            console.error("Invalid question or choice index:", currentQuestion, answerIndex);
+            return;  // 오류가 발생하면 함수를 종료
         }
 
         setSelectedAnswer(answer);
@@ -93,12 +112,47 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
         setShowFeedback(true);
         setShowNextButtons(true); // 답안 제출 후 버튼들 표시
 
+        // 서버에 답안 제출
+        submitAnswerToServer(currentQuestion.idx, userId, answer);  // answer를 전송 (이제 'a', 'b', 'c', 'd' 중 하나가 전송됨)
+
         if (isCorrect) {
             onCorrectAnswer();
         } else {
             onWrongAnswer();
         }
     }, [currentQuestion, onCorrectAnswer, onWrongAnswer]);
+
+    // 서버에 답안을 제출하는 함수
+    const submitAnswerToServer = async (questionId, studentId, answer) => {
+        console.log("Submitting answer with idx:", questionId);  // 로그 추가
+
+        const payload = {
+            idx: questionId,
+            studentId: studentId,
+            studentAnswer: answer
+        };
+        console.log("Submitting payload:", JSON.stringify(payload)); // 직렬화된 JSON 확인
+
+        try {
+            const response = await fetch("http://localhost:5173/api/answers/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),  // JSON 직렬화
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to submit answer");
+            }
+
+            const result = await response.json();
+            console.log("Answer submission result:", result);
+
+        } catch (error) {
+            console.error("Error submitting answer:", error);
+        }
+    };
 
     // 다음 문제로 이동하는 함수
     const handleNextQuestion = () => {
@@ -128,71 +182,71 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                className="fixed inset-0 flex items-start justify-center z-[1000]" // items-center를 items-start로 변경
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
             >
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="absolute bg-white rounded-xl shadow-2xl w-[800px] m-4 z-10"
+                    className="relative bg-white rounded-xl shadow-2xl min-w-[600px] max-w-[800px] mt-[200px]" // 상단 여백 추가 및 최소/최대 너비 설정
                 >
                     {/* 상단 결과 표시 */}
-                    <div className="p-6 border-b">
-                        <h3 className="text-2xl font-bold text-center text-gray-800">
-                            {feedback ? '정답입니다! 🎉' : '틀렸습니다. 😢'}
-                        </h3>
+                    <div className="p-4 border-b">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-center flex-1">
+                                {feedback ? '정답입니다! 🎉' : '틀렸습니다. 😢'}
+                            </h3>
+                            <button
+                                onClick={() => setShowNextButtons(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     {/* 해설 영역 */}
-                    <div className="p-6 max-h-[60vh] overflow-y-auto relative">
+                    <div className="p-4">
                         {showExplanation && (
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="absolute inset-0 flex items-center justify-center bg-gray-50 p-6 rounded-lg"
+                                className="bg-gray-50 p-4 rounded-lg"
                             >
-                                <div className='flex justify-between items-center'>
-                                    <h4 className="font-bold mb-4 text-lg text-gray-700">💡 해설</h4>
-                                    <button
-                                        onClick={handleNextQuestion}
-                                        className="text-gray-400 hover:text-gray-600"
-                                    >
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                <div className="flex items-center mb-2">
+                                    <span className="text-xl mr-2">💡</span>
+                                    <h4 className="font-bold text-base text-gray-700">해설</h4>
                                 </div>
-                                <div className="text-lg text-gray-600 leading-relaxed">
-                                    <p className="whitespace-pre-line break-words">
+                                <div className="max-h-[300px] overflow-y-auto pr-2"> {/* 스크롤 가능한 영역 설정 */}
+                                    <div className="text-base text-gray-600 leading-relaxed whitespace-pre-line">
                                         {currentQuestion.explanation}
-                                    </p>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
                     </div>
 
                     {/* 하단 버튼 영역 */}
-                    <div className="p-6 border-t bg-gray-50 rounded-b-xl">
-                        <div className="flex justify-center gap-4">
+                    <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+                        <div className="flex justify-center gap-3">
                             <button
                                 onClick={() => setShowExplanation(!showExplanation)}
-                                className="py-3 px-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-lg font-medium"
+                                className="py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-base font-medium"
                             >
                                 {showExplanation ? '해설 닫기' : '해설 보기'}
                             </button>
                             <button
                                 onClick={handleNextQuestion}
-                                className="py-3 px-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-lg font-medium"
+                                className="py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-base font-medium"
                             >
                                 다음 문제
                             </button>
                         </div>
                     </div>
-
-                    {/* 닫기 버튼 (선택사항) */}
-
-
                 </motion.div>
-            </motion.div >
+            </motion.div>
         );
     };
 
@@ -230,14 +284,14 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                         style={{
                                             backgroundColor: colors[index],
                                         }}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={{scale: 1.02}}
+                                        whileTap={{scale: 0.98}}
                                     >
                                         <div
                                             className="w-full h-full flex flex-col items-center justify-center text-center p-6">
-                                            <span className="text-2xl font-bold mb-3 text-white">
-                                                {['A', 'B', 'C', 'D'][index]}
-                                            </span>
+                    <span className="text-2xl font-bold mb-3 text-white">
+                        {['A', 'B', 'C', 'D'][index]}
+                    </span>
                                             <p className="text-lg text-white w-full px-4">
                                                 {option}
                                             </p>
@@ -245,14 +299,14 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                         <AnimatePresence>
                                             {showFeedback && selectedAnswer === index && (
                                                 <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
+                                                    initial={{opacity: 0}}
+                                                    animate={{opacity: 1}}
+                                                    exit={{opacity: 0}}
                                                     className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center"
                                                 >
-                                                    <span className="text-6xl font-bold text-white">
-                                                        {feedback ? 'O' : 'X'}
-                                                    </span>
+                            <span className="text-6xl font-bold text-white">
+                                {feedback ? 'O' : 'X'}
+                            </span>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
@@ -307,8 +361,9 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -20 }}
-                                            className={`mt-4 p-4 rounded-lg text-center text-white text-xl font-bold ${feedback ? 'bg-green-500' : 'bg-red-500'
-                                                }`}
+                                            className={`mt-4 p-4 rounded-lg text-center text-white text-xl font-bold ${
+                                                feedback ? 'bg-green-500' : 'bg-red-500'
+                                            }`}
                                         >
                                             {feedback ? 'Correct!' : 'Incorrect!'}
                                         </motion.div>

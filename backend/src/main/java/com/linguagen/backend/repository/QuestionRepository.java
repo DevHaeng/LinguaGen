@@ -1,6 +1,7 @@
 package com.linguagen.backend.repository;
 
 import com.linguagen.backend.entity.Question;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,4 +41,30 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
         @Param("tier") Byte tier,
         @Param("count") int count
     );
+
+    // 같은 등급과 티어 문제 조회
+    @Query("SELECT q FROM Question q WHERE q.diffGrade = :grade AND q.diffTier = :tier ORDER BY q.diffTier DESC")
+    List<Question> findByDiffGradeAndDiffTierWithChoices(@Param("grade") Byte grade, @Param("tier") Byte tier, Pageable pageable);
+
+    // 낮은 문제 조회 (현재 등급과 티어보다 낮은 문제)
+    @Query("SELECT q FROM Question q WHERE (q.diffGrade = :grade AND q.diffTier > :tier) OR (q.diffGrade < :grade) ORDER BY q.diffGrade DESC, q.diffTier ASC")
+    List<Question> findLowerQuestions(@Param("grade") Byte grade, @Param("tier") Byte tier, Pageable pageable);
+
+    // 같은 등급 문제 조회 (현재 등급과 티어에 일치하는 문제)
+    @Query("SELECT q FROM Question q WHERE q.diffGrade = :grade AND q.diffTier = :tier ORDER BY FUNCTION('RAND')")
+    List<Question> findSameGradeQuestions(@Param("grade") Byte grade, @Param("tier") Byte tier, Pageable pageable);
+
+    // 높은 문제 조회 (현재 등급과 티어보다 높은 문제)
+    @Query("SELECT q FROM Question q WHERE (q.diffGrade = :grade AND q.diffTier < :tier) OR (q.diffGrade > :grade) ORDER BY q.diffGrade ASC, q.diffTier DESC")
+    List<Question> findHigherQuestions(@Param("grade") Byte grade, @Param("tier") Byte tier, Pageable pageable);
+
+
+
+
+
+
+
+
+
+
 }

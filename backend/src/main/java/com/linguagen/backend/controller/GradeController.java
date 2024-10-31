@@ -22,7 +22,7 @@ public class GradeController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<GradeDTO> getGrade(@PathVariable String userId) {
+    public ResponseEntity<GradeDTO> getGrade(@PathVariable("userId") String userId) {
         GradeDTO gradeDTO = gradeService.getGradeByUserId(userId);
         if (gradeDTO != null) {
             return ResponseEntity.ok(gradeDTO);

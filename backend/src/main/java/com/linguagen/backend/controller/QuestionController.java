@@ -4,6 +4,8 @@ import com.linguagen.backend.dto.QuestionDTO;
 import com.linguagen.backend.service.QuestionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,8 @@ import java.util.List;
 @Slf4j  // 로깅을 위한 어노테이션 추가
 public class QuestionController {
     private final QuestionService questionService;
+    private static final Logger logger = LoggerFactory.getLogger(QuestionController.class);
+
 
     // 모든 문제 조회
     @GetMapping("/questions")
@@ -34,13 +38,12 @@ public class QuestionController {
         return ResponseEntity.ok(questionService.getQuestionsByType(type));
     }
 
-    // 난이도별 문제 조회
-    @GetMapping("/questions/grade/{grade}/tier/{tier}")
-    public ResponseEntity<List<QuestionDTO>> getQuestionsByDifficulty(
-        @PathVariable Byte grade,
-        @PathVariable Byte tier) {
+    // 난이도별 문제 조회 엔드포인트
+    @GetMapping("/questions/difficulty/{grade}/{tier}")
+    public ResponseEntity<List<QuestionDTO>> getQuestionsByDifficulty(@PathVariable Byte grade, @PathVariable Byte tier) {
         return ResponseEntity.ok(questionService.getQuestionsByDifficulty(grade, tier));
     }
+
 
     // 관심사별 문제 조회
     @GetMapping("/questions/interest/{interest}")
@@ -81,6 +84,22 @@ public class QuestionController {
         );
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
+
+    // 사용자 등급과 티어에 맞는 문제 조회
+    @GetMapping("/questions/user/{userId}")
+    public ResponseEntity<List<QuestionDTO>> getQuestionsForUser(@PathVariable("userId") String userId) {
+        // 로그인한 회원의 아이디를 로깅
+        logger.info("Request received to fetch questions for userId: " + userId);
+
+        List<QuestionDTO> questions = questionService.getQuestionsForUser(userId);
+
+        // 결과 로깅
+        logger.info("Number of questions fetched for userId " + userId + ": " + questions.size());
+
+        return ResponseEntity.ok(questions);
+    }
+
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {

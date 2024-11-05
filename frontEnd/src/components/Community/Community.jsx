@@ -13,6 +13,24 @@ import DetailView from './DetailView';
 import axios from 'axios';
 import {format} from "date-fns";
 
+const TruncatedText = styled.div`
+  display: -webkit-box;
+  -webkit-line-clamp: 1; /* 제목: 1줄까지만 표시 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+`;
+
+const TruncatedContent = styled.div`
+  display: -webkit-box;
+  -webkit-line-clamp: 1; 
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+`;
+
 const SearchBox = styled.div`
   margin-top: 15px;
   width: fit-content;
@@ -211,16 +229,17 @@ const DefaultBoard = ({ handleTabClick, setSelectedItem }) => {
               key={idx}
               onClick={() => handlePostClick(post, category)}
             >
+
               {/* 제목 */}
-              <h3 className='font-bold text-base truncate w-full'>
-                {post.title.length > 30 ? post.title.slice(0, 30) + '...' : post.title}
-              </h3>
-              
+              <TruncatedText className='font-bold text-base w-full'>
+                {post.title}
+              </TruncatedText>
+
               {/* 내용 */}
-              <p className='mt-2 mb-3 text-sm text-gray-600 line-clamp-2 w-full'> 
-                {post.content.length > 32 ? post.content.slice(0, 32) + '...' : post.content}
-              </p>
-              
+              <TruncatedContent className='mt-2 mb-3 text-sm text-gray-600 w-full'>
+                {post.content}
+              </TruncatedContent>
+
               {/* 작성자 */}
               <p className='text-sm cursor-pointer hover:underline transition-all'>
                 {post.nickname ? post.nickname : post.userId}

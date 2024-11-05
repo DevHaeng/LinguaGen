@@ -3,6 +3,7 @@ import {Button} from '@/components/ui/button.jsx';
 import {format} from 'date-fns';
 import axios from 'axios';
 import {useParams, useNavigate} from 'react-router-dom';
+import { FaThumbsUp, FaHeart } from 'react-icons/fa';
 
 const DetailView = ({handleTabClick}) => {
     const {board, idx} = useParams();
@@ -17,6 +18,8 @@ const DetailView = ({handleTabClick}) => {
     const [editedContent, setEditedContent] = useState('');
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editedCommentContent, setEditedCommentContent] = useState('');
+    const [likeCount, setLikeCount] = useState(0); // 좋아요 수 상태 추가
+    const [userPoints, setUserPoints] = useState(null); // 사용자 포인트 상태 추가
 
     // 각 게시판에 해당하는 카테고리명과 데이터 연결
     const boardTitles = {
@@ -31,6 +34,8 @@ const DetailView = ({handleTabClick}) => {
             try {
                 const response = await axios.get(`${import.meta.env.VITE_APP_API_BASE_URL}/community/post/${idx}`);
                 setSelectedItem(response.data);
+                setLikeCount(response.data.likeCount); // 초기 좋아요 수 설정
+                setUserPoints(response.data.points);
             } catch (error) {
                 console.error('게시글을 불러오는 중 에러 발생:', error);
             }
@@ -88,6 +93,8 @@ const DetailView = ({handleTabClick}) => {
 
     // 게시글 삭제
     const handleDeletePost = async () => {
+        const confirmed = window.confirm("정말 삭제하시겠습니까?");
+        if (!confirmed) return;
         try {
             await axios.delete(`${import.meta.env.VITE_APP_API_BASE_URL}/community/${idx}`, {
                 params: { userId: loggedInUserId }
@@ -134,7 +141,7 @@ const DetailView = ({handleTabClick}) => {
     // 댓글 수정
     const handleSaveComment = async (commentIdx) => {
         try {
-            await axios.put(`http://localhost:8085/api/comments/${commentIdx}`, {content: editedCommentContent});
+            await axios.put(`${import.meta.env.VITE_APP_API_BASE_URL}/comments/${commentIdx}`, {content: editedCommentContent});
             fetchComments();
             setEditingCommentId(null);
         } catch (error) {
@@ -152,6 +159,29 @@ const DetailView = ({handleTabClick}) => {
             fetchComments();
         } catch (error) {
             console.error('댓글 삭제 중 에러 발생:', error);
+        }
+    };
+
+    // 좋아요 버튼 클릭 핸들러
+    const handleLikeClick = async () => {
+        // 포인트가 부족할 경우 알림 표시
+        if (!userPoints || userPoints < 10) {
+            alert("포인트가 부족합니다.");
+            return;
+        }
+
+        const confirmed = window.confirm("좋아요를 누르면 10포인트가 차감됩니다. 계속하시겠습니까?");
+        if (!confirmed) return; // 사용자가 확인하지 않으면 실행하지 않음
+
+        try {
+            // 좋아요 API 호출
+            await axios.post(`${import.meta.env.VITE_APP_API_BASE_URL}/community/post/${selectedItem.idx}/like`, null, {
+                params: { userId: loggedInUserId }
+            });
+
+            setLikeCount(likeCount + 1); // 좋아요 수 증가
+        } catch (error) {
+            console.error('좋아요 처리 중 에러 발생:', error);
         }
     };
 
@@ -224,6 +254,12 @@ const DetailView = ({handleTabClick}) => {
                         {selectedItem.nickname || selectedItem.userId.split('@')[0]}님의 게시글 더보기
                     </Button>
                 </div>
+
+                {/* 좋아요 버튼 */}
+                <button onClick={handleLikeClick} className="text-gray-500 hover:text-red-500 flex items-center ml-auto">
+                    <FaHeart />
+                    <span className="ml-1">{likeCount}</span>
+                </button>
             </div>
 
             {/* 댓글 입력 및 등록 버튼 */

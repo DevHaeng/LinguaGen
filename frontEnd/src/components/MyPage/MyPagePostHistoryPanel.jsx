@@ -19,7 +19,7 @@ import {
 
 import styled from 'styled-components';
 
-const NotepadDiv = styled.div`
+/*const NotepadDiv = styled.div`
   position: relative;
   padding: 2px;
   font-size: 16px;
@@ -28,6 +28,33 @@ const NotepadDiv = styled.div`
   white-space: pre-wrap;
   background-image: linear-gradient(to bottom, transparent 29px, #ccc 30px);
   background-size: 100% 30px;
+`;*/
+
+const TitleDiv = styled.div`
+  font-size: 16px;
+  font-weight: bold;
+  white-space: nowrap; /* 한 줄로 고정 */
+  overflow: hidden;
+    text-overflow: ellipsis;
+`;
+
+const NotepadDiv = styled.div`
+  position: relative;
+  padding: 2px;
+  font-size: 16px;
+  line-height: 24px; /* 줄 간격 */
+    min-height: 72px; /* 3줄의 높이 */
+  max-height: 72px; /* 3줄까지만 표시 */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* 최대 3줄까지만 표시하고 초과 시 ... */
+  text-overflow: ellipsis;
+  white-space: normal; /* 줄바꿈 허용 */
+
+  /* 배경에 3줄 밑줄 표시 */
+  background-image: linear-gradient(to bottom, transparent 23px, #ccc 24px);
+  background-size: 100% 24px;
 `;
 
 const Tooltip = styled.div`
@@ -133,11 +160,11 @@ const MyPagePostHistoryPanel = () => {
                         onMouseLeave={handleMouseLeave}
                     >
                         <CardHeader className='flex flex-row items-center justify-between border-b-2'>
-                            <CardTitle>{card.title.length > 19 ? card.title.slice(0, 19) + '...' : card.title}</CardTitle>
+                            <TitleDiv>{card.title}</TitleDiv>
                         </CardHeader>
                         <CardContent className='pt-12'>
                             <NotepadDiv contentEditable={false}>
-                                {card.content.length > 57 ? card.content.slice(0, 57) + '...' : card.content}
+                                {card.content}
                             </NotepadDiv>
                         </CardContent>
                         <CardFooter style={{ position: 'relative', display: 'inline-block' }}>

@@ -1,11 +1,13 @@
 package com.linguagen.backend.controller;
 
 import com.linguagen.backend.dto.CommunityDTO;
+import com.linguagen.backend.entity.User;
 import com.linguagen.backend.service.CommunityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -94,5 +96,18 @@ public class CommunityController {
             @PageableDefault(size = 12) Pageable pageable) {
         Page<CommunityDTO> communities = service.getUserCommunityPosts(userId, pageable);
         return ResponseEntity.ok(communities);
+    }
+
+    // 게시글 좋아요 기능
+    @PostMapping("/post/{idx}/like")
+    public ResponseEntity<String> addLike(@PathVariable("idx") Long communityIdx, @RequestParam String userId) {
+        try {
+            service.addLike(communityIdx, userId);
+            return ResponseEntity.ok("좋아요가 성공적으로 추가되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
     }
 }

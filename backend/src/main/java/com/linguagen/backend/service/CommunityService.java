@@ -5,6 +5,7 @@ import com.linguagen.backend.entity.Community;
 import com.linguagen.backend.entity.User;
 import com.linguagen.backend.repository.CommentRepository;
 import com.linguagen.backend.repository.CommunityRepository;
+import com.linguagen.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,8 @@ public class CommunityService {
     private CommunityRepository repository;
     @Autowired
     private CommentRepository commentRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     // 게시글 생성
     public CommunityDTO createCommunityPost(CommunityDTO communityDTO) {
@@ -118,6 +121,24 @@ public class CommunityService {
             Long commentsCount = commentRepository.countByCommunityIdxAndIsDeletedFalse(community.getIdx());
             return new CommunityDTO(community.getIdx(), community.getTitle(), community.getContent(), commentsCount);
         });
+    }
+
+    // 게시글 좋아요 기능
+    public void addLike(Long communityIdx, String userId) {
+        // 사용자 포인트 확인
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        if (user.getPoints() < 10) {
+            throw new IllegalStateException("포인트가 부족합니다."); // 기본 예외 사용
+        }
+
+        // 포인트 차감 및 좋아요 증가
+        user.setPoints(user.getPoints() - 10); // 포인트 10 차감
+        userRepository.save(user); // 사용자 포인트 업데이트
+
+        // 게시글의 좋아요 수 증가
+        Community community = repository.findById(communityIdx).orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
+        community.setLikeCount(community.getLikeCount() + 1); // 좋아요 수 증가
+        repository.save(community); // 게시글 업데이트
     }
 
     // 엔티티를 DTO로 변환

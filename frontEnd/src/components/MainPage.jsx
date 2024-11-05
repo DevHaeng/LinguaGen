@@ -64,20 +64,24 @@ function MainPage() {
       </BackgroundVideo>
       <Header />
       
-      {/* 메인 컨텐츠 영역을 grid로 구성 */}
-      <main className='w-full h-full grid grid-cols-12 gap-4 p-4 pt-0 mt-4 '>
+      {/* 메인 컨텐츠 영역을 반응형 grid로 구성 */}
+      <main className='w-full h-full grid grid-cols-12 gap-4 p-4 pt-0 mt-4 
+        lg:grid-cols-12 
+        max-lg:grid-cols-1 max-lg:mx-auto max-lg:w-full max-lg:overflow-y-scroll custom-scrollbar'>
         {/* 왼쪽 사이드바 (프로필 카드 + 캐러셀) */}
-        <div className='col-span-3 col-start-2 flex flex-col gap-8'>
+        <div className='col-span-3 col-start-2 flex flex-col gap-8
+          max-lg:col-span-1 max-lg:col-start-1'>
           <div className='flex items-center justify-center'>
-            <ProfileCard />
+            <ProfileCard className='max-lg:w-full'/>
           </div>
-          <div className='flex items-center justify-center'>
-            <WordCarousel />
+          <div className='flex items-center justify-center max-lg:hidden'>
+            <WordCarousel/>
           </div>
         </div>
 
         {/* 오른쪽 메인 컨테이너 */}
-        <div className='col-span-7 flex items-center justify-center'>
+        <div className='col-span-7 flex items-center justify-center
+          max-lg:col-span-1'>
           <MainContainer selectedGame={selectedGame} />
         </div>
       </main>

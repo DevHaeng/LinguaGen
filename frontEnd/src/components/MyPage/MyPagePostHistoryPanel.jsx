@@ -133,11 +133,11 @@ const MyPagePostHistoryPanel = () => {
                         onMouseLeave={handleMouseLeave}
                     >
                         <CardHeader className='flex flex-row items-center justify-between border-b-2'>
-                            <CardTitle>{card.title}</CardTitle>
+                            <CardTitle>{card.title.length > 19 ? card.title.slice(0, 19) + '...' : card.title}</CardTitle>
                         </CardHeader>
                         <CardContent className='pt-12'>
                             <NotepadDiv contentEditable={false}>
-                                {card.content}
+                                {card.content.length > 57 ? card.content.slice(0, 57) + '...' : card.content}
                             </NotepadDiv>
                         </CardContent>
                         <CardFooter style={{ position: 'relative', display: 'inline-block' }}>

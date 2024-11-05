@@ -26,7 +26,7 @@ public class GradeService {
         Grade grade = new Grade();
         // DTO에서 엔티티로 데이터 복사
         grade.setIdx(gradeDTO.getIdx());
-        grade.setUserId(gradeDTO.getUser_id());
+        grade.setUserId(gradeDTO.getUserId());
         grade.setGrade(gradeDTO.getGrade());
         grade.setTier(gradeDTO.getTier());
         grade.setExp(gradeDTO.getExp());

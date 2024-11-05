@@ -13,11 +13,11 @@ const TabContainer = styled.div`
   display: flex;
   justify-content: flex-start;
   margin-bottom: 16px;
-  padding-top : 16px;
+  padding-top: 16px;
 `;
 
 const Tab = styled.div`
-  width: 160px;
+  width: 120px;
   text-align: center;
   font-weight: bold;
   font-size: 16px;
@@ -39,16 +39,20 @@ const Slider = styled.div`
             case 'playHistory':
                 return '0px';
             case 'postHistory':
-                return '160px';
+                return '120px';
             case 'inquiryHistory':
-                return '320px';
+                return '240px';
             case 'pointUsingHistory':
+                return '360px';
+            case 'accountSettings':
                 return '480px';
+            case 'notificationSettings':
+                return '600px';
             default:
                 return '0px';
         }
     }};
-  width: 160px;
+  width: 120px;
   height: 4px;
   background-color: #00b894;
   transition: left 0.3s ease;
@@ -168,39 +172,83 @@ const MyPagePlayHistoryPanel = ({ activePanel, setActivePanel }) => {
 
     return (
         <>
-            <div className='flex flex-col items-start justify-start h-full w-full ml-24 border-2 border-gray-300 rounded-lg'
-                style={{backdropFilter : 'blur(15px)' , background : 'rgba(255, 255, 255, 0.2', height : 'auto'}}
+            <div className='flex flex-col items-start justify-start h-full w-full ml-24 border-2 border-gray-300 rounded-lg max-lg:ml-0'
+                style={{backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2', height: 'auto'}}
             >
                 {/* 탭 부분 */}
                 <TabContainer>
-                    <Tab
-                        isActive={activeTab === 'playHistory'}
-                        onClick={() => setActivePanel('playHistory')}
-                    >
-                        플레이 내역
-                    </Tab>
-                    <Tab
-                        isActive={activeTab === 'postHistory'}
-                        onClick={() => setActivePanel('postHistory')}
-                    >
-                        작성한 게시글
-                    </Tab>
-                    <Tab
-                        isActive={activeTab === 'inquiryHistory'}
-                        onClick={() => setActivePanel('inquiryHistory')}
-                    >
-                        작성한 문의글
-                    </Tab>
-                    <Tab
-                        isActive={activeTab === 'pointUsingHistory'}
-                        onClick={() => setActivePanel('pointUsingHistory')}
-                    >
-                        포인트 내역
-                    </Tab>
-                    <Slider activeTab={activeTab} />
+                    {/* 모바일 버전 탭 - 모든 메뉴 표시 */}
+                    <div className='hidden max-lg:flex w-full'>
+                        <Tab
+                            isActive={activeTab === 'playHistory'}
+                            onClick={() => setActivePanel('playHistory')}
+                        >
+                            플레이 내역
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'postHistory'}
+                            onClick={() => setActivePanel('postHistory')}
+                        >
+                            작성한 게시글
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'inquiryHistory'}
+                            onClick={() => setActivePanel('inquiryHistory')}
+                        >
+                            작성한 문의글
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'pointUsingHistory'}
+                            onClick={() => setActivePanel('pointUsingHistory')}
+                        >
+                            포인트 내역
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'accountSettings'}
+                            onClick={() => setActivePanel('accountSettings')}
+                        >
+                            계정 설정
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'notificationSettings'}
+                            onClick={() => setActivePanel('notificationSettings')}
+                        >
+                            알림 설정
+                        </Tab>
+                        <Slider activeTab={activeTab} />
+                    </div>
+
+                    {/* PC 버전 탭 - 기록 관련 탭만 표시 */}
+                    <div className='flex max-lg:hidden w-full'>
+                        <Tab
+                            isActive={activeTab === 'playHistory'}
+                            onClick={() => setActivePanel('playHistory')}
+                        >
+                            플레이 내역
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'postHistory'}
+                            onClick={() => setActivePanel('postHistory')}
+                        >
+                            작성한 게시글
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'inquiryHistory'}
+                            onClick={() => setActivePanel('inquiryHistory')}
+                        >
+                            작성한 문의글
+                        </Tab>
+                        <Tab
+                            isActive={activeTab === 'pointUsingHistory'}
+                            onClick={() => setActivePanel('pointUsingHistory')}
+                        >
+                            포인트 내역
+                        </Tab>
+                        <Slider activeTab={activeTab} />
+                    </div>
                 </TabContainer>
 
-                {/* activeTab에 따른 내용 렌더링 */}
+                {/* 기존 컨텐츠 부분 */}
                 <div className='w-full mt-8 flex flex-col' style={{ height: '100%', marginBottom: '45px' }}>
                     {activeTab === 'playHistory' && (
                         <>

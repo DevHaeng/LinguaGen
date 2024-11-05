@@ -2,6 +2,16 @@ import React, { useState, useMemo } from 'react'
 import styled from 'styled-components'
 import { Lock } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import { Button } from "@/components/ui/button"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 // Switch 컨테이너 및 슬라이드 애니메이션 스타일 정의
 const SwitchContainer = styled.div`
@@ -103,18 +113,25 @@ const BadgeText = styled.p`
   border-radius: 6px;
 `
 
-// Badge 컨테이너를 grid로 정렬하여 일정한 간격 유지, 한 열에 5개 제한
+// Badge 컨테이너 grid로 정렬하여 일정한 간격 유지, 한 열에 5개 제한
 const BadgeGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 한 줄에 5개의 칸 */
-  grid-gap: 40px; /* 간격을 일정하게 */
-  justify-items: center; /* 중앙 정렬 */
-  align-items: center; /* 세로 중앙 정렬 */
+  grid-template-columns: repeat(5, 1fr);
+  grid-gap: 40px;
+  justify-items: center;
+  align-items: center;
   width: 100%;
-`
+  
+  @media (max-width: 952px) {
+    grid-template-columns: repeat(2, 1fr); /* 모바일에서 2열로 변경 */
+    grid-gap: 20px;
+  }
+`;
 
 const BadgePanel = () => {
   const [activeTab, setActiveTab] = useState('challenges');
+  const [currentPage, setCurrentPage] = useState(1);
+  const isMobile = window.innerWidth <= 952;
 
   // challenges 데이터 쿼리
   const { data: challengesBadges = [] } = useQuery({
@@ -122,21 +139,10 @@ const BadgePanel = () => {
     queryFn: async () => {
       const response = await fetch('src/Challenges.json');
       const data = await response.json();
-      // 이미지 프리로딩
-      await Promise.all(
-        data.map(badge => 
-          new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = badge.src;
-            img.onload = resolve;
-            img.onerror = reject;
-          }).catch(() => {/* 이미지 로드 실패 처리 */})
-        )
-      );
       return data;
     },
-    staleTime: Infinity, // 데이터를 항상 fresh하게 유지
-    cacheTime: Infinity, // 캐시 영구 유지
+    staleTime: Infinity,
+    cacheTime: Infinity,
   });
 
   // activities 데이터 쿼리
@@ -145,17 +151,6 @@ const BadgePanel = () => {
     queryFn: async () => {
       const response = await fetch('src/Activities.json');
       const data = await response.json();
-      // 이미지 프리로딩
-      await Promise.all(
-        data.map(badge => 
-          new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = badge.src;
-            img.onload = resolve;
-            img.onerror = reject;
-          }).catch(() => {/* 이미지 로드 실패 처리 */})
-        )
-      );
       return data;
     },
     staleTime: Infinity,
@@ -168,11 +163,36 @@ const BadgePanel = () => {
     [activeTab, challengesBadges, activitiesBadges]
   );
 
+  // itemsPerPage를 badges 초기화 이후에 설정
+  const itemsPerPage = useMemo(() => 
+    isMobile ? 8 : badges.length,
+    [isMobile, badges.length]
+  );
+
+  // 현재 페이지의 뱃지들만 필터링
+  const currentBadges = useMemo(() => {
+    if (!isMobile) return badges;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return badges.slice(startIndex, startIndex + itemsPerPage);
+  }, [badges, currentPage, itemsPerPage, isMobile]);
+
+  // 총 페이지 수 계산
+  const totalPages = useMemo(() => 
+    isMobile ? Math.ceil(badges.length / itemsPerPage) : 1,
+    [badges.length, itemsPerPage, isMobile]
+  );
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className='flex flex-col items-center justify-start w-full ml-24 border-2 border-gray-300 rounded-lg' 
+    <div className='flex flex-col items-center justify-start w-full ml-24 border-2 border-gray-300 rounded-lg max-lg:ml-0' 
          style={{backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2', height: 'auto'}}>
       <div className='w-full'>
-        <h4 className='font-bold h-14 pt-8 pl-4' style={{ fontSize: '24px' }}>뱃지</h4>
+        <h4 className='font-bold h-14 pt-8 pl-4 max-lg:mb-8' style={{ fontSize: '24px' }}>뱃지</h4>
       </div>
 
       <SwitchContainer>
@@ -193,15 +213,15 @@ const BadgePanel = () => {
 
       <div className='flex flex-col items-start justify-start w-full mt-10 h-full'>
         <BadgeGrid style={{ marginBottom: '45px' }}>
-          {badges.map((badge, index) => (
+          {currentBadges.map((badge, index) => (
             <div key={badge.id || index} className="flex flex-col items-center justify-center">
               <BadgeItem unlocked={badge.unlocked}>
                 <img
                   src={badge.src || 'https://via.placeholder.com/60'}
                   alt={badge.title}
                   style={{ borderRadius: '50%', width: '60px', height: '60px'}}
-                  loading="lazy" // 지연 로딩 적용
-                  decoding="async" // 비동기 디코딩
+                  loading="lazy"
+                  decoding="async"
                 />
                 <Lock size={20} />
                 <Tooltip>{badge.description}</Tooltip>
@@ -210,6 +230,39 @@ const BadgePanel = () => {
             </div>
           ))}
         </BadgeGrid>
+
+        {isMobile && badges.length > itemsPerPage && (
+          <div className="w-full flex justify-center mb-8">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  />
+                </PaginationItem>
+                
+                {[...Array(totalPages)].map((_, index) => (
+                  <PaginationItem key={index + 1}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(index + 1)}
+                      isActive={currentPage === index + 1}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
     </div>
   );

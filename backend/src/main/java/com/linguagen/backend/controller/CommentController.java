@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RequestMapping("/api/comments")
 public class CommentController {
 
@@ -18,7 +17,7 @@ public class CommentController {
 
     // 댓글 목록 조회
     @GetMapping("/{communityIdx}")
-    public ResponseEntity<List<CommentDTO>> getCommentsByCommunityIdx(@PathVariable Long communityIdx) {
+    public ResponseEntity<List<CommentDTO>> getCommentsByCommunityIdx(@PathVariable("communityIdx") Long communityIdx) {
         List<CommentDTO> comments = service.getCommentsByCommunityIdx(communityIdx);
         return ResponseEntity.ok(comments);
     }
@@ -32,14 +31,14 @@ public class CommentController {
 
     // 댓글 수정
     @PutMapping("/{commentIdx}")
-    public ResponseEntity<CommentDTO> updateComment(@PathVariable Long commentIdx, @RequestBody CommentDTO commentDTO) {
+    public ResponseEntity<CommentDTO> updateComment(@PathVariable("commentIdx") Long commentIdx, @RequestBody CommentDTO commentDTO) {
         CommentDTO updatedComment = service.updateComment(commentIdx, commentDTO);
         return ResponseEntity.ok(updatedComment);
     }
 
     // 댓글 삭제
     @DeleteMapping("/{commentIdx}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long commentIdx) {
+    public ResponseEntity<Void> deleteComment(@PathVariable("commentIdx") Long commentIdx) {
         service.deleteComment(commentIdx);
         return ResponseEntity.noContent().build();
     }

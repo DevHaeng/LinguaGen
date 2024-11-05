@@ -13,10 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"},
-    allowedHeaders = "*",
-    allowCredentials = "true")  // React와 CORS 문제 해결
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor

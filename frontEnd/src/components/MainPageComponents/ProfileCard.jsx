@@ -216,7 +216,7 @@ function ProfileCard() {
   }
 
   return (
-    <Card className="w-80 h-96 shadow-xl" style={{ backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2' }}>
+    <Card className="w-80 h-96 shadow-xl max-lg:w-full" style={{ backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2' }}>
       <CardHeader style={{
         display: "flex",
         flexDirection: "row",

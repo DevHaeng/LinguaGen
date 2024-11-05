@@ -61,29 +61,130 @@ public class QuestionService {
 
     public List<QuestionDTO> getQuestionsInOrder(Byte grade, Byte tier) {
         List<Question> questions = new ArrayList<>();
+        final int TOTAL_QUESTIONS = 15;
+        final int QUESTIONS_PER_DIFFICULTY = 5;
 
-        // 낮은 문제 2개 조회 (정렬된 순서로 가져오기)
-        Pageable lowerPageable = PageRequest.of(0, 10); // 충분한 개수를 가져온 후 섞기
-        List<Question> lowerQuestions = questionRepository.findLowerQuestions(grade, tier, lowerPageable);
-        Collections.shuffle(lowerQuestions); // 무작위로 섞기
-        questions.addAll(lowerQuestions.subList(0, Math.min(2, lowerQuestions.size()))); // 필요한 개수만 추가
+        // 등급과 티어 범위 체크 및 조정을 위한 헬퍼 메소드
+        Pageable pageable = PageRequest.of(0, QUESTIONS_PER_DIFFICULTY * 2);
 
-        // 같은 등급 문제 6개 (브론즈 4의 경우 8개) 조회
-        int sameGradeCount = (grade == 1 && tier == 4) ? 8 : 6;
-        Pageable sameGradePageable = PageRequest.of(0, 10); // 충분한 개수를 가져온 후 섞기
-        List<Question> sameGradeQuestions = questionRepository.findSameGradeQuestions(grade, tier, sameGradePageable);
-        Collections.shuffle(sameGradeQuestions); // 무작위로 섞기
-        questions.addAll(sameGradeQuestions.subList(0, Math.min(sameGradeCount, sameGradeQuestions.size())));
+        // 현재 등급/티어 문제
+        List<Question> sameGradeQuestions = questionRepository.findSameGradeQuestions(grade, tier, pageable);
+        Collections.shuffle(sameGradeQuestions);
 
-        // 높은 문제 2개 조회 (정렬된 순서로 가져오기)
-        Pageable higherPageable = PageRequest.of(0, 10); // 충분한 개수를 가져온 후 섞기
-        List<Question> higherQuestions = questionRepository.findHigherQuestions(grade, tier, higherPageable);
-        Collections.shuffle(higherQuestions); // 무작위로 섞기
-        questions.addAll(higherQuestions.subList(0, Math.min(2, higherQuestions.size())));
+        // 브론즈 4티어는 현재 등급 문제를 더 많이 가져옴
+        int currentLevelCount = (grade == 1 && tier == 4) ? 10 : QUESTIONS_PER_DIFFICULTY;
+        sameGradeQuestions = new ArrayList<>(sameGradeQuestions.subList(0,
+            Math.min(currentLevelCount, sameGradeQuestions.size())));
 
-        return questions.stream()
+        // 낮은 난이도 문제 선택
+        List<Question> lowerQuestions = new ArrayList<>();
+
+        // 브론즈 4가 아닌 경우에만 낮은 난이도 문제 가져오기
+        if (!(grade == 1 && tier == 4)) {
+            if (tier < 4) {
+                List<Question> lowerTierQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                    grade,
+                    (byte)(tier + 1),
+                    pageable
+                );
+                lowerQuestions.addAll(lowerTierQuestions);
+            }
+            if (grade > 1) {
+                List<Question> lowerGradeQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                    (byte)(grade - 1),
+                    (byte)1,
+                    pageable
+                );
+                lowerQuestions.addAll(lowerGradeQuestions);
+            }
+        }
+        Collections.shuffle(lowerQuestions);
+        lowerQuestions = new ArrayList<>(lowerQuestions.subList(0,
+            Math.min(QUESTIONS_PER_DIFFICULTY, lowerQuestions.size())));
+
+        // 높은 난이도 문제 선택
+        List<Question> higherQuestions = new ArrayList<>();
+
+        // 브론즈 4의 경우 브론즈 3 문제만 가져오기
+        if (grade == 1 && tier == 4) {
+            List<Question> bronze3Questions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                (byte)1,
+                (byte)3,
+                pageable
+            );
+            higherQuestions.addAll(bronze3Questions);
+        } else {
+            if (tier > 1) {
+                List<Question> higherTierQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                    grade,
+                    (byte)(tier - 1),
+                    pageable
+                );
+                higherQuestions.addAll(higherTierQuestions);
+            }
+            if (grade < 6) {
+                List<Question> higherGradeQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                    (byte)(grade + 1),
+                    (byte)4,
+                    pageable
+                );
+                higherQuestions.addAll(higherGradeQuestions);
+            }
+        }
+        Collections.shuffle(higherQuestions);
+        higherQuestions = new ArrayList<>(higherQuestions.subList(0,
+            Math.min(QUESTIONS_PER_DIFFICULTY, higherQuestions.size())));
+
+        // 문제 배치
+        List<Question> finalQuestions = new ArrayList<>();
+
+        if (grade == 1 && tier == 4) {
+            // 브론즈 4 특별 배치
+            // 1-5번: 적응 구간
+            addQuestions(finalQuestions, sameGradeQuestions, 3);    // 적응
+            addQuestions(finalQuestions, higherQuestions, 1);       // 첫 도전
+            addQuestions(finalQuestions, sameGradeQuestions, 1);    // 회복
+
+            // 6-10번: 중간 도전 구간
+            addQuestions(finalQuestions, higherQuestions, 2);       // 연속 도전
+            addQuestions(finalQuestions, sameGradeQuestions, 3);    // 회복 및 안정화
+
+            // 11-15번: 마지막 도전 구간
+            addQuestions(finalQuestions, sameGradeQuestions, 3);    // HP 확보
+            addQuestions(finalQuestions, higherQuestions, 2);       // 마지막 도전
+        } else {
+            // 일반적인 경우의 배치
+            // 1-5번: 초반 도전 구간
+            addQuestions(finalQuestions, sameGradeQuestions, 1);    // 워밍업
+            addQuestions(finalQuestions, higherQuestions, 2);       // 승급 도전 기회
+            addQuestions(finalQuestions, lowerQuestions, 1);        // HP 회복 기회
+            addQuestions(finalQuestions, sameGradeQuestions, 1);    // 안정화
+
+            // 6-10번: 중간 회복 구간
+            addQuestions(finalQuestions, higherQuestions, 1);       // 승급 도전
+            addQuestions(finalQuestions, lowerQuestions, 2);        // HP 회복
+            addQuestions(finalQuestions, sameGradeQuestions, 2);    // 안정화
+
+            // 11-15번: 마지막 도전 구간
+            addQuestions(finalQuestions, higherQuestions, 2);       // 마지막 승급 도전
+            addQuestions(finalQuestions, lowerQuestions, 2);        // HP 회복
+            addQuestions(finalQuestions, sameGradeQuestions, 1);    // 마무리
+        }
+
+        // 부족한 문제는 현재 등급 문제로 채움
+        while (finalQuestions.size() < TOTAL_QUESTIONS && !sameGradeQuestions.isEmpty()) {
+            finalQuestions.add(sameGradeQuestions.remove(0));
+        }
+
+        return finalQuestions.stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
+    }
+
+    private void addQuestions(List<Question> target, List<Question> source, int count) {
+        for (int i = 0; i < count && !source.isEmpty(); i++) {
+            target.add(source.remove(0));
+        }
     }
 
     // 난이도별 문제 조회

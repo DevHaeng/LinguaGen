@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:5173" , allowCredentials = "true")
 @RestController
 @RequestMapping("/api/words")
 public class DailyWordController {

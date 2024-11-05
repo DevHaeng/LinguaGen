@@ -38,13 +38,13 @@ const DayCircle = styled.div`
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background-color: ${props => (props.studied ? '#ff6347' : '#dee2e6')};
+  background-color: ${props => (props.studied ? '#00b894' : '#dee2e6')};
   margin: 0 auto 10px;
 `;
 
 const DayLabel = styled.p`
   font-size: 14px;
-  color: ${props => (props.studied ? '#ff6347' : '#6c757d')};
+  color: ${props => (props.studied ? '#00b894' : '#6c757d')};
 `;
 
 const Footer = styled.div`
@@ -113,27 +113,27 @@ const WeeklyLearning = () => {
 
     const currentWeek = getWeekOfMonth(new Date());
 
-    return (
-        <Card className='w-full h-full ml-4 px-10 pb-10 pt-4'>
-            <Header style={{ marginBottom: '50px', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span>주간 학습</span>
-                    <FaCog style={{ marginLeft: '10px', color: '#adb5bd', cursor: 'pointer' }} />
-                </div>
-                <button
-                    style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        outline: 'none'
-                    }}
-                >
-                    <FaBellSlash />
-                    <span style={{ marginLeft: '5px' }}>알림 설정</span>
-                </button>
-            </Header>
+  return (
+    <Card className='w-full h-full px-10 pb-10 pt-4'>
+      <Header style={{ marginBottom: '50px', userSelect: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span>주간 학습</span>
+          <FaCog style={{ marginLeft: '10px', color: '#adb5bd', cursor: 'pointer' }} />
+        </div>
+        <button
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            outline: 'none'
+          }}
+        >
+          <FaBellSlash />
+          <span style={{ marginLeft: '5px' }}>알림 설정</span>
+        </button>
+      </Header>
 
             <WeekLabel>
                 {new Date().getFullYear()}년 {new Date().getMonth() + 1}월 {currentWeek}주차

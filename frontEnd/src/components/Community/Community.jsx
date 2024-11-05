@@ -14,10 +14,14 @@ import axios from 'axios';
 import {format} from "date-fns";
 
 const SearchBox = styled.div`
-  margin-top : 15px;
-  width: fit-content;  // fit-content로 크기 자동 조절
+  margin-top: 15px;
+  width: fit-content;
   height: fit-content;
-  position: relative;  // 부모 요소에 position: relative 추가
+  position: relative;
+  
+  @media (max-width: 952px) {
+    margin: 0 auto;  // 모바일에서 중앙 정렬
+  }
 `;
 
 const SearchInput = styled.input`
@@ -69,17 +73,25 @@ const SearchButton = styled.button`
 
 const Item = styled.div`
   display: list-item;
-  margin-left : 15px;
+  margin-left: 15px;
   list-style-position: inside;
   padding: 14px;
   font-weight: bold;
-  color: ${({ isActive }) => (isActive ? 'black' : '#5a5255')}; /* 클릭된 상태일 때 색상 변경 */
+  color: ${({ isActive }) => (isActive ? 'black' : '#5a5255')};
   cursor: pointer;
   user-select: none;
-  &:hover {
-    color: ${({ isActive }) => (isActive ? 'black' : 'black')}; /* hover 상에 색상 변경 */
+  
+  @media (max-width: 952px) {
+    display: inline-block;  // 가로로 배열
+    margin: 0 10px;  // 좌우 여백 조정
+    padding: 8px 12px;  // 패딩 조정
+    list-style-type: none;  // 리스트 스타일 제거
   }
-  transition: color 0.3s ease; /* 부드러운 색상 전환 애니메이션 */
+  
+  &:hover {
+    color: ${({ isActive }) => (isActive ? 'black' : 'black')};
+  }
+  transition: color 0.3s ease;
 `;
 
 const BackgroundVideoWrapper = styled.div`
@@ -120,7 +132,7 @@ const FadeInContainer = styled.div`
   animation: ${fadeIn} 1s ease-in-out;
 `;
 
-// 기본 시판 컴포넌트
+// 기본 게시판 컴포넌트
 const DefaultBoard = ({ handleTabClick, setSelectedItem }) => {
   const navigate = useNavigate(); // useNavigate 훅 사용
   const [boardData, setBoardData] = useState({
@@ -132,7 +144,7 @@ const DefaultBoard = ({ handleTabClick, setSelectedItem }) => {
 
   const [loading, setLoading] = useState(true);
 
-// 각 게시판의 최신 글 4개 가져오기
+// 각 게시판의 최신 게시글 4개 가져오기
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -179,25 +191,43 @@ const DefaultBoard = ({ handleTabClick, setSelectedItem }) => {
   };
 
   return (
-    <div className='w-full p-8 mt-8 bg-white rounded-md grid grid-cols-6 gap-8' style={{ height: '1450px' }}>
+    <div className='w-full p-8 mt-8 bg-white rounded-md grid grid-cols-6 gap-8 mb-10
+        max-sm:grid-cols-1 max-sm:gap-4' 
+        style={{ height: 'auto', minHeight: '1150px' }}>
       {Object.keys(boardData).map((category, index) => (
-        <div className='flex flex-col col-span-3 row-span-3 w-full h-full' key={index}>
+        <div className='flex flex-col col-span-3 row-span-3 w-full h-full overflow-hidden
+            max-sm:col-span-1' 
+            key={index}>
           <div className='border-slate-500 border-b-2 flex flex-row justify-between pb-2'>
-            <p className='font-bold'>{boardTitles[category]}</p>
-            <p className='text-gray-300 cursor-pointer' onClick={() => handleTabClick(category)}>
+            <p className='font-bold text-lg'>{boardTitles[category]}</p>
+            <p className='text-gray-300 cursor-pointer hover:text-gray-500 transition-colors' 
+               onClick={() => handleTabClick(category)}>
               더보기 {'>'}
             </p>
           </div>
           {boardData[category] && boardData[category].slice(0, boardData[category].length).map((post, idx) => (
             <div
-              className='w-full h-42 flex flex-col border-b-2 py-2 items-start cursor-pointer'
+              className='w-full flex flex-col border-b-2 py-3 items-start cursor-pointer hover:bg-gray-50 transition-colors'
               key={idx}
-              onClick={() => handlePostClick(post, category)} // category 인자 추가
+              onClick={() => handlePostClick(post, category)}
             >
-              <h3 className='font-bold text-lg'>{post.title.length > 30 ? post.title.slice(0, 30) + '...' : post.title}</h3>
-              <p className='mt-2 mb-4'> {post.content.length > 30 ? post.content.slice(0, 30) + '...' : post.content}</p>
-              <p className='cursor-pointer underline md:decoration-1'>{post.nickname ? post.nickname : post.userId}</p>
-              <div className='w-1/2 flex justify-between mt-4 text-sm text-gray-400'>
+              {/* 제목 */}
+              <h3 className='font-bold text-base truncate w-full'>
+                {post.title.length > 30 ? post.title.slice(0, 30) + '...' : post.title}
+              </h3>
+              
+              {/* 내용 */}
+              <p className='mt-2 mb-3 text-sm text-gray-600 line-clamp-2 w-full'> 
+                {post.content.length > 32 ? post.content.slice(0, 32) + '...' : post.content}
+              </p>
+              
+              {/* 작성자 */}
+              <p className='text-sm cursor-pointer hover:underline transition-all'>
+                {post.nickname ? post.nickname : post.userId}
+              </p>
+              
+              {/* 메타 정보 */}
+              <div className='w-full flex justify-start gap-4 mt-2 text-xs text-gray-400'>
                 <p>{format(new Date(post.createdAt), 'yyyy-MM-dd')}</p>
                 <p>조회 {post.viewCount}</p>
                 <p>좋아요 {post.likeCount}</p>
@@ -261,18 +291,20 @@ const Community = () => {
         <Header />
         
         {/* 커뮤니티 타이틀 */}
-        <div className='w-full flex justify-center items-center mt-8 mb-4'>
+        <div className='w-full flex justify-center items-center mt-8 mb-4 max-lg:mt-20'>
           <Link to='/community' onClick={() => handleTabClick('')}>
             <h1 className='select-none kanit-bold'>Community</h1>
           </Link>
         </div>
 
-        {/* 메인 컨텐츠 영역을 grid로 구성 */}
+        {/* 메인 컨텐츠 영역 */}
         <main className='w-full h-full grid grid-cols-12 gap-4 p-4 pt-0'>
-          {/* 왼쪽 사이드바 */}
-          <div className='col-span-3 col-start-2 flex flex-col items-center'>
-            <div className='w-80 flex flex-col border-2 border-gray-300 rounded-lg backdrop-blur-md bg-white/20 mt-8'>
-              <div className='w-full p-4'>
+          {/* 사이드바 - 모바일에서는 상단으로 */}
+          <div className='col-span-3 col-start-2 flex flex-col items-center
+              max-lg:col-span-10 max-lg:col-start-2 max-lg:mb-4'>
+            <div className='w-80 flex flex-col border-2 border-gray-300 rounded-lg backdrop-blur-md bg-white/20 mt-8
+                max-lg:w-full max-lg:flex-row max-lg:items-center max-lg:justify-between max-lg:p-4'>
+              <div className='w-full p-4 max-lg:w-auto'>
                 <SearchBox>
                   <SearchInput type="text" placeholder="Search..." />
                   <SearchButton>
@@ -280,7 +312,8 @@ const Community = () => {
                   </SearchButton>
                 </SearchBox>
               </div>
-              <div className='w-full my-8 jua-regular text-xl'>
+              <div className='w-full my-8 jua-regular text-xl 
+                  max-lg:my-0 max-lg:flex max-lg:flex-row max-lg:justify-center max-lg:flex-wrap max-lg:gap-2'>
                 <Item isActive={activeTab === 'Notice'} onClick={() => handleTabClick('Notice')}>
                   공지사항
                 </Item>
@@ -297,8 +330,9 @@ const Community = () => {
             </div>
           </div>
 
-          {/* 오른쪽 메인 컨테이너 */}
-          <div className='col-span-7 flex flex-col'>
+          {/* 메인 컨테이너 - 모바일에서는 전체 너비 */}
+          <div className='col-span-7 flex flex-col
+              max-lg:col-span-10 max-lg:col-start-2'>
             {activeTab === '' && <DefaultBoard handleTabClick={handleTabClick} setSelectedItem={setSelectedItem} />}
             {activeTab === 'notice' && <Notice handleTabClick={handleTabClick} setSelectedItem={setSelectedItem} />}
             {activeTab === 'freeboard' && <FreeBoard handleTabClick={handleTabClick} setSelectedItem={setSelectedItem} />}

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class GradeDTO {
     private int idx;
-    private String user_id;
+    private String userId;
     private int grade;
     private int tier;
     private int exp;

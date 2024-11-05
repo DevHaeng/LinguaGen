@@ -1,8 +1,10 @@
 package com.linguagen.backend.controller;
 
 
+import com.linguagen.backend.dto.GradeTestDTO;
 import com.linguagen.backend.dto.UserInterestDTO;
 import com.linguagen.backend.entity.User;
+import com.linguagen.backend.service.GradeTestService;
 import com.linguagen.backend.service.UserInterestService;
 import com.linguagen.backend.service.UserService;
 import jakarta.servlet.http.Cookie;
@@ -13,19 +15,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:5173" , allowCredentials = "true")  // React와 CORS 문제 해결
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
     private final UserInterestService userInterestService;
+    private final GradeTestService gradeTestService;
 
     // 생성자 주입
-    public UserController(UserService userService, UserInterestService userInterestService) {
+    public UserController(UserService userService, UserInterestService userInterestService, GradeTestService gradeTestService) {
         this.userService = userService;
         this.userInterestService = userInterestService;
+        this.gradeTestService = gradeTestService;
     }
 
     // 모든 유저 조회
@@ -52,14 +56,34 @@ public class UserController {
         return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
     }
 
-
-
     // 유저 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    // 유저 임시 등급 저장
+    @PostMapping("/gradeTest")
+    public ResponseEntity<String> saveTemporaryGrade(@RequestBody GradeTestDTO gradeData) {
+        // 데이터 검증용 로그
+        System.out.println("Received userId: " + gradeData.getUserId());
+        System.out.println("Received tempGrade: " + gradeData.getTempGrade());
+        System.out.println("Received tempTier: " + gradeData.getTempTier());
+
+        try {
+            // 기존 로직
+            String userId = gradeData.getUserId();
+            Integer tempGrade = gradeData.getTempGrade();
+            Integer tempTier = gradeData.getTempTier();
+
+            gradeTestService.saveGradeTest(userId, tempGrade, tempTier);
+            return ResponseEntity.status(HttpStatus.CREATED).body("임시 등급 정보가 저장되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("임시 등급 정보 저장에 실패했습니다: " + e.getMessage());
+        }
+    }
+
 
     // 유저 관심사 저장
     @PostMapping("/interests")
@@ -81,8 +105,6 @@ public class UserController {
             return new ResponseEntity<>("관심사 저장 실패: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
 
     // 로그인
     @PostMapping("/login")

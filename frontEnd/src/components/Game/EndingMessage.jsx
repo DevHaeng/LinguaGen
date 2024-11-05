@@ -10,7 +10,7 @@ const EndingMessage = ({ isGameClear, onFinish }) => {
     const clearMessages = [
         "축하해! 보스를 물리쳤어!",
         "네 덕분에 마을이 평화로워졌어!",
-        "다음에 또 만나자!",
+        "더욱 강해져서 이세계의 최강자가 될 수있을거야!",
     ];
 
     const gameOverMessages = [

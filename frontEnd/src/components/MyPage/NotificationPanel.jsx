@@ -62,8 +62,9 @@ const NotificationPanel = () => {
   };
 
   return (
-    <NotificationContainer>
-      <NotificationTitle>알림 설정</NotificationTitle>
+    <div className='w-full h-[calc(100vh-200px)]'>  
+      <NotificationContainer>
+        <NotificationTitle>알림 설정</NotificationTitle>
       <NotificationDescription>
         이메일 수신 여부를 설정할 수 있어요. 회의안 변경, 결제내역 등 필수적으로 안내되어야 하는 내용은 수신여부와 상관없이 계속 발송됩니다.
       </NotificationDescription>
@@ -99,7 +100,8 @@ const NotificationPanel = () => {
         </NotificationText>
         <Switch checked={enabled.promotion} onChange={() => toggleSwitch('promotion')} />
       </NotificationItem>
-    </NotificationContainer>
+        </NotificationContainer>
+    </div>
   );
 };
 

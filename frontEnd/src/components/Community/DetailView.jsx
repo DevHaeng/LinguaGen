@@ -89,7 +89,9 @@ const DetailView = ({handleTabClick}) => {
     // 게시글 삭제
     const handleDeletePost = async () => {
         try {
-            await axios.delete(`${import.meta.env.VITE_APP_API_BASE_URL}/community/${idx}`);
+            await axios.delete(`${import.meta.env.VITE_APP_API_BASE_URL}/community/${idx}`, {
+                params: { userId: loggedInUserId }
+            });
             navigate(`/community/${board}`);
         } catch (error) {
             console.error('게시글 삭제 중 에러 발생:', error);
@@ -146,7 +148,7 @@ const DetailView = ({handleTabClick}) => {
         if (!confirmed) return;
 
         try {
-            await axios.delete(`\`${import.meta.env.VITE_APP_API_BASE_URL}/comments/${commentIdx}`);
+            await axios.delete(`${import.meta.env.VITE_APP_API_BASE_URL}/comments/${commentIdx}`);
             fetchComments();
         } catch (error) {
             console.error('댓글 삭제 중 에러 발생:', error);

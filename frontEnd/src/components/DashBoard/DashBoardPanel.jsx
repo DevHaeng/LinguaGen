@@ -127,28 +127,34 @@ const DashBoardPanel = () => {
     const remainingExp = nextTierExp - userExp;
 
     return (
-        <div className='flex flex-col items-center justify-start w-auto ml-24 p-4 border-2 border-gray-300 rounded-lg'
-            style={{ backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2', height: 'auto' }}
-        > {/* h-full 제거 */}
-            <div className='w-full'><h4 className='font-bold h-14 pt-8 pl-4' style={{fontSize : '24px'}}>대쉬보드</h4></div>
-            <div className='flex flex-col items-start justify-start w-full'> {/* h-full 제거 */}
-                <div className='flex flex-row justify-start w-full h-86 mt-10' style={{ width: '945px' }}>
-                    <div className='flex flex-col w-1/2 h-full gap-4'>
-                        <Card className='w-full h-1/2'>
-                            <CardHeader className='flex flex-row justify-between items-center'>
-                                <CardTitle> 최근 Play </CardTitle>
+        <div className='flex flex-col items-center justify-start w-auto ml-24 p-4 border-2 border-gray-300 rounded-lg min-h-[1400px]
+            max-lg:ml-0 max-lg:w-full max-lg:min-h-[2650px]'
+            style={{ backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2' }}
+        >
+            <div className='w-full'>
+                <h4 className='font-bold h-14 pt-0 pl-4' style={{fontSize : '24px'}}>대쉬보드</h4>
+            </div>
+            
+            <div className='grid grid-cols-1 gap-8 w-full' style={{ width: '945px', maxWidth: '100%' }}>
+                <div className='grid grid-cols-2 gap-4 max-lg:grid-cols-1'>
+                    <div className='grid grid-rows-2 gap-4'>
+                        <Card className='w-full h-[140px]'>
+                            <CardHeader className='flex flex-row justify-between items-center py-2'>
+                                <CardTitle className='text-lg'> 최근 Play </CardTitle>
                                 <CardDescription style={{ cursor: 'pointer' }}> Play 내역 {'>'} </CardDescription>
                             </CardHeader>
-                            <CardContent className='flex flex-col '>
-                                <p className='font-bold text-xl'>
+                            <CardContent className='flex flex-col py-2'>
+                                <p className='font-bold text-lg'>
                                     {latestStudyInfo ? (
                                         <>
                                             <span>{latestStudyInfo.questionType} </span>
-                                            <img
-                                                src={tierImages[latestStudyInfo.difficultyGrade]}
-                                                alt={`${gradeNames[latestStudyInfo.difficultyGrade]} 이미지`}
-                                                className='inline-block w-6 h-6 ml-2'
-                                            />
+                                           
+                                                <img
+                                                    src={tierImages[latestStudyInfo.difficultyGrade]}
+                                                    alt={`${gradeNames[latestStudyInfo.difficultyGrade]} 이미지`}
+                                                    className='inline-block w-5 h-5 ml-2'
+                                                />
+                                                {` Tier ${latestStudyInfo.difficultyTier}`}
                                             <span>{gradeNames[latestStudyInfo.difficultyGrade] || "Unknown Grade"}</span>
                                             <span> {` ${latestStudyInfo.difficultyTier}`}</span>
                                         </>
@@ -156,18 +162,18 @@ const DashBoardPanel = () => {
                                 </p>
                             </CardContent>
                         </Card>
-                        <Card className='w-full h-74'>
-                            <CardHeader className='flex flex-row justify-between items-center'>
-                                <CardTitle className='text-md'> 현재 티어
+                        <Card className='w-full h-[140px]'>
+                            <CardHeader className='flex flex-row justify-between items-center py-2'>
+                                <CardTitle className='text-lg'> 현재 티어
                                     - {userGradeString && userTier ? `${userGradeString} ${userTier}` : '로딩 중...'}</CardTitle>
                             </CardHeader>
-                            <CardContent className='flex flex-row items-center'>
+                            <CardContent className='flex flex-row items-center py-2'>
                                 <img
                                     src={userTier === 1 ? tierImages[userGrade + 1] : tierImages[userGrade]}
                                     alt='Tier img'
-                                    className='w-20 h-20'
+                                    className='w-16 h-16'
                                 />
-                                <p className='font-bold text-md ml-10'>
+                                <p className='font-bold text-sm ml-6'>
                                     {userTier === 1
                                         ? `다음 ${gradeNames[userGrade + 1]} 4 까지 남은 포인트: ${remainingExp > 0 ? remainingExp : 0}`
                                         : `다음 ${gradeNames[userGrade]} ${userTier - 1} 까지 남은 포인트: ${remainingExp > 0 ? remainingExp : 0}`}
@@ -175,12 +181,13 @@ const DashBoardPanel = () => {
                             </CardContent>
                         </Card>
                     </div>
-                    <div className='flex w-1/2' style={{height: '345px'}}>
+                    <div className='h-[300px]'>
                         <WeeklyLearning/>
                     </div>
                 </div>
-                <div className='flex pt-8' style={{ width: '945px' }}>
-                    <Card className='w-full h-full'>
+
+                <div className='w-full'>
+                    <Card className='w-full'>
                         <CardHeader className='p-4 pl-8 text-md font-bold'>
                             <h2>1년간 Play</h2>
                         </CardHeader>
@@ -189,7 +196,8 @@ const DashBoardPanel = () => {
                         </CardContent>
                     </Card>
                 </div>
-                <div className='grid grid-cols-3 gap-4 w-full mb-24 mt-8' style={{ height: '450px', width: '945px' }}>
+
+                <div className='grid grid-cols-3 gap-4 max-lg:grid-cols-1' style={{ height: '450px' }}>
                     <Card className='w-full h-full'>
                         <CardHeader className='p-4 pl-8 text-md font-bold border-b-2 border-gray-300'>
                             <h2>자주 틀린 단어</h2>

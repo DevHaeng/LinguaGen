@@ -17,39 +17,81 @@ import { Label } from "@/components/ui/label.jsx"
 import axios from "axios";
 
 
-// 탭 컨테이너 및 슬라이드 스타일 정의
+// 탭 스타일 수정
 const TabContainer = styled.div`
   position: relative;
   width: 100%;
-  border-bottom: 2px solid #e2e8f0; /* 기본 border */
+  border-bottom: 2px solid #e2e8f0;
   display: flex;
   justify-content: flex-start;
   margin-bottom: 16px;
+  padding-top: 16px;
+
+  @media (min-width: 952px) {
+    .settings-tabs {
+      display: none;  // PC 버전에서는 설정 관련 탭 숨기기
+    }
+  }
 `;
 
 const Tab = styled.div`
-  width: 160px; /* 고정 너비 */
+  width: 120px; // 다른 탭들과 동일한 너비로 수정
   text-align: center;
   font-weight: bold;
   font-size: 16px;
   padding: 8px 0;
   cursor: pointer;
-  color: ${({ isActive }) => (isActive ? 'black' : '#5a5255')}; /* 활성화된 탭 색상 */
+  color: ${({ isActive }) => (isActive ? 'black' : '#5a5255')};
   transition: color 0.3s ease;
   user-select: none;
-    &:hover {
-    color: ${({ isActive }) => (isActive ? 'black' : 'black')}; /* hover 상태에서 색상 변경 */
+  &:hover {
+    color: ${({ isActive }) => (isActive ? 'black' : 'black')};
   }
 `;
 
 const Slider = styled.div`
   position: absolute;
   bottom: 0;
-  left: ${({ activeTab }) => (activeTab === 'profile' ? '0px' : '160px')}; /* 슬라이더 위치 조정 */
-  width: 160px;
+  width: 120px;
   height: 4px;
-  background-color: #00b894; /* 연두색 */
-  transition: left 0.3s ease; /* 슬라이드 애니메이션 */
+  background-color: #00b894;
+  transition: left 0.3s ease;
+  
+  /* PC 버전 - 설정 탭만 있을 때 */
+  @media (min-width: 952px) {
+    left: ${({ activeTab }) => {
+      switch (activeTab) {
+        case 'accountSettings':
+          return '0px';
+        case 'notificationSettings':
+          return '120px';
+        default:
+          return '0px';
+      }
+    }};
+  }
+
+  /* 모바일 버전 - 모든 탭이 있을 때 */
+  @media (max-width: 951px) {
+    left: ${({ activeTab }) => {
+      switch (activeTab) {
+        case 'playHistory':
+          return '0px';
+        case 'postHistory':
+          return '120px';
+        case 'inquiryHistory':
+          return '240px';
+        case 'pointUsingHistory':
+          return '360px';
+        case 'accountSettings':
+          return '480px';
+        case 'notificationSettings':
+          return '600px';
+        default:
+          return '0px';
+      }
+    }};
+  }
 `;
 
 const MyPageSettingPanel = ({ activePanel, setActivePanel }) => {
@@ -145,29 +187,72 @@ const MyPageSettingPanel = ({ activePanel, setActivePanel }) => {
     };
 
     return (
-        <div className='flex flex-col items-center justify-start w-full min-h-screen ml-24 pt-4 border-2 border-gray-300 rounded-lg'
+        <div className='flex flex-col items-start justify-start h-full w-full ml-24 border-2 border-gray-300 rounded-lg max-lg:ml-0'
             style={{ backdropFilter: 'blur(15px)', background: 'rgba(255, 255, 255, 0.2' }}
         >
-            {/* 탭 부분 */}
+            {/* 탭 부분 - 모바일에서만 모든 탭 표시 */}
             <TabContainer>
-                <Tab
-                    isActive={activeTab === 'profile'}
-                    onClick={() => setActivePanel('accountSettings')}
-                >
-                    계정 정보
-                </Tab>
-                <Tab
-                    isActive={activeTab === 'notification'}
-                    onClick={() => setActivePanel('notificationSettings')}
-                >
-                    알림 설정
-                </Tab>
-                <Slider activeTab={activeTab} /> {/* 슬라이더 */}
+                <div className='hidden max-lg:flex w-full'>
+                    <Tab
+                        isActive={activePanel === 'playHistory'}
+                        onClick={() => setActivePanel('playHistory')}
+                    >
+                        플레이 내역
+                    </Tab>
+                    <Tab
+                        isActive={activePanel === 'postHistory'}
+                        onClick={() => setActivePanel('postHistory')}
+                    >
+                        작성한 게시글
+                    </Tab>
+                    <Tab
+                        isActive={activePanel === 'inquiryHistory'}
+                        onClick={() => setActivePanel('inquiryHistory')}
+                    >
+                        작성한 문의글
+                    </Tab>
+                    <Tab
+                        isActive={activePanel === 'pointUsingHistory'}
+                        onClick={() => setActivePanel('pointUsingHistory')}
+                    >
+                        포인트 내역
+                    </Tab>
+                    <Tab
+                        isActive={activePanel === 'accountSettings'}
+                        onClick={() => setActivePanel('accountSettings')}
+                    >
+                        계정 설정
+                    </Tab>
+                    <Tab
+                        isActive={activePanel === 'notificationSettings'}
+                        onClick={() => setActivePanel('notificationSettings')}
+                    >
+                        알림 설정
+                    </Tab>
+                    <Slider activeTab={activePanel} />
+                </div>
+
+                {/* PC 버전에서는 설정 관련 탭만 표시 */}
+                <div className='flex max-lg:hidden w-full'>
+                    <Tab
+                        isActive={activePanel === 'accountSettings'}
+                        onClick={() => setActivePanel('accountSettings')}
+                    >
+                        계정 설정
+                    </Tab>
+                    <Tab
+                        isActive={activePanel === 'notificationSettings'}
+                        onClick={() => setActivePanel('notificationSettings')}
+                    >
+                        알림 설정
+                    </Tab>
+                    <Slider activeTab={activePanel} />
+                </div>
             </TabContainer>
 
             {/* 패널 내용 */}
-            <div className='w-full mt-8' style={{ maxHeight: '720px', height: '420px' }}>
-                {activeTab === 'profile' && (
+            <div className='w-full mt-8' style={{ maxHeight: '720px' }}>
+                {activePanel === 'accountSettings' && (
                     <>
                         <Card className='h-full'>
                             <CardHeader className='text-xl font-bold'>
@@ -347,7 +432,7 @@ const MyPageSettingPanel = ({ activePanel, setActivePanel }) => {
                     </>
                 )}
 
-                {activeTab === 'notification' && <NotificationPanel />} {/* 알림 설정 탭 */}
+                {activePanel === 'notificationSettings' && <NotificationPanel />}
             </div>
         </div>
     );

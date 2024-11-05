@@ -353,24 +353,51 @@ function SignupNext({ formData, onPreviousSignup }) {
   const [sliderValue, setSliderValue] = useState(33); // 초기 값 33
   const [selectedInterests, setSelectedInterests] = useState([]); // 관심사 선택 상태
 
-  // 세분화된 티어와 등급을 계산하는 함수
-  const getTier = () => {
+  // 사용자가 볼 등급 라벨을 반환하는 함수
+  const getTierLabel = () => {
     if (sliderValue <= 48) {
       if (sliderValue <= 12) return "Bronze 4";
-      if (sliderValue <= 24) return "Bronze 3";
-      if (sliderValue <= 36) return "Bronze 2";
-      return "Bronze 1";
+      else if (sliderValue <= 24) return "Bronze 3";
+      else if (sliderValue <= 36) return "Bronze 2";
+      else return "Bronze 1";
     } else if (sliderValue <= 79) {
       if (sliderValue <= 58) return "Silver 4";
-      if (sliderValue <= 64) return "Silver 3";
-      if (sliderValue <= 71) return "Silver 2";
-      return "Silver 1";
+      else if (sliderValue <= 64) return "Silver 3";
+      else if (sliderValue <= 71) return "Silver 2";
+      else return "Silver 1";
     } else {
       if (sliderValue <= 86) return "Gold 4";
-      if (sliderValue <= 92) return "Gold 3";
-      if (sliderValue <= 96) return "Gold 2";
-      return "Gold 1";
+      else if (sliderValue <= 92) return "Gold 3";
+      else if (sliderValue <= 96) return "Gold 2";
+      else return "Gold 1";
     }
+  };
+
+  // API 전송 시 사용할 등급 데이터 반환 함수
+  const getTierData = () => {
+    let grade, tier;
+
+    if (sliderValue <= 48) {
+      grade = 1; // Bronze
+      if (sliderValue <= 12) tier = 4;
+      else if (sliderValue <= 24) tier = 3;
+      else if (sliderValue <= 36) tier = 2;
+      else tier = 1;
+    } else if (sliderValue <= 79) {
+      grade = 2; // Silver
+      if (sliderValue <= 58) tier = 4;
+      else if (sliderValue <= 64) tier = 3;
+      else if (sliderValue <= 71) tier = 2;
+      else tier = 1;
+    } else {
+      grade = 3; // Gold
+      if (sliderValue <= 86) tier = 4;
+      else if (sliderValue <= 92) tier = 3;
+      else if (sliderValue <= 96) tier = 2;
+      else tier = 1;
+    }
+
+    return { grade, tier };
   };
 
   // ToggleGroup에서 선택된 항목 업데이트
@@ -412,29 +439,46 @@ function SignupNext({ formData, onPreviousSignup }) {
       if (userResponse.status === 201) {
         console.log('사용자 정보 저장 성공:', userResponse.data);
 
-        if (selectedInterests.length === 0) {
+        if (selectedInterests.length > 0) {
+          // 두 번째 POST 요청: 관심사 정보 전송
+          const interestResponse = await axios.post('http://localhost:8085/api/users/interests', {
+            userId: formData.id,
+            interestIdx: selectedInterests,
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (interestResponse.status !== 201) {
+            console.warn('관심사 저장 실패:', interestResponse.data);
+            alert('회원가입 중 관심사 저장에 실패했습니다.');
+            return;
+          }
+        } else {
           console.warn('선택된 관심사가 없습니다. 관심사 전송을 건너뜁니다.');
-          alert('회원가입이 완료되었습니다!');
-          navigate('/main'); // 메인 페이지로 이동
-          return;
         }
 
-        // 두 번째 POST 요청: 관심사 정보 전송
-        const interestResponse = await axios.post('http://localhost:8085/api/users/interests', {
-          userId: formData.id, // 사용자 ID와 함께 관심사 정보 전송
-          interestIdx: selectedInterests,
+        // 사용자가 볼 등급 라벨과 데이터
+        const userTierLabel = getTierLabel();
+        const { grade, tier } = getTierData();
+        // 세 번째 POST 요청: 티어 정보 전송
+        const tierResponse = await axios.post('http://localhost:8085/api/users/gradeTest', {
+          userId: formData.id,
+          tempGrade: grade,
+          tempTier: tier,
         }, {
           headers: {
             'Content-Type': 'application/json',
           },
         });
 
-        if (interestResponse.status === 201) {
+        if (tierResponse.status === 201) {
           alert('회원가입이 완료되었습니다!');
           navigate('/main'); // 메인 페이지로 이동
         } else {
-          console.warn('관심사 저장 실패:', interestResponse.data);
-          alert('회원가입 중 관심사 저장에 실패했습니다.');
+          console.warn('티어 저장 실패:', tierResponse.data);
+          alert('회원가입 중 티어 저장에 실패했습니다.');
         }
       } else {
         console.warn('회원가입 실패:', userResponse.data);
@@ -453,6 +497,7 @@ function SignupNext({ formData, onPreviousSignup }) {
       }
     }
   };
+
 
   return (
     <div className="flex justify-center items-center w-2/3 h-auto">
@@ -524,7 +569,7 @@ function SignupNext({ formData, onPreviousSignup }) {
               className='mt-4'
               onValueChange={(value) => setSliderValue(value[0])}
             />
-            <p className='mt-4'>{getTier()}</p>
+            <p className='mt-4'>{getTierLabel()}</p>
           </div>
           <div className='w-full h-auto flex flex-row justify-center gap-4'>
             <Button onClick={onPreviousSignup}>이전</Button>

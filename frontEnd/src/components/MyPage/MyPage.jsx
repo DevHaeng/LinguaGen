@@ -12,11 +12,15 @@ const SidebarContainer = styled.div`
   padding: 20px;
   font-size: 16px;
   height: 545px;
-  backdrop-filter : blur(15px);
-  background : rgba(255, 255, 255, 0.2);
-  border : 1px white solid;
-  border-radius : 8px;
-  box-shadow : 0 0 10px 0 rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px white solid;
+  border-radius: 8px;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 951px) {
+    display: none;
+  }
 `;
 
 // 섹션 제목 스타일
@@ -149,7 +153,7 @@ const MyPage = () => {
         </div>
 
         {/* 오른쪽 메인 컨테이너 */}
-        <div className='col-span-7 flex items-start justify-center mt-16'>
+        <div className='col-span-7 flex items-start justify-center mt-16 max-lg:col-span-12 max-lg:w-full'>
           {(activePanel === 'playHistory' || activePanel === 'postHistory' || activePanel === 'inquiryHistory' || activePanel === 'pointUsingHistory') && (
             <MyPagePlayHistoryPanel activePanel={activePanel} setActivePanel={setActivePanel} />
           )}

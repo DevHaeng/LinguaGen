@@ -14,7 +14,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/community")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class CommunityController {
 
     @Autowired
@@ -29,21 +28,21 @@ public class CommunityController {
 
     // 게시글 수정
     @PutMapping("/{idx}")
-    public ResponseEntity<CommunityDTO> updateCommunityPost(@PathVariable Long idx, @RequestBody CommunityDTO updateCommunity, @RequestParam String userId) {
+    public ResponseEntity<CommunityDTO> updateCommunityPost(@PathVariable("idx") Long idx, @RequestBody CommunityDTO updateCommunity, @RequestParam String userId) {
         Optional<CommunityDTO> updated = service.updateCommunityPost(idx, updateCommunity, userId);
         return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // 게시글 삭제
     @DeleteMapping("/{idx}")
-    public ResponseEntity<Void> deleteCommunityPost(@PathVariable Long idx, @RequestParam String userId) {
+    public ResponseEntity<Void> deleteCommunityPost(@PathVariable("idx") Long idx, @RequestParam String userId) {
         boolean deleted = service.deleteCommunityPost(idx, userId);
         return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
     // 게시글 조회 (단일)
     @GetMapping("/post/{idx}")
-    public ResponseEntity<CommunityDTO> getCommunityByIdx(@PathVariable Long idx) {
+    public ResponseEntity<CommunityDTO> getCommunityByIdx(@PathVariable("idx") Long idx) {
         Optional<CommunityDTO> community = service.getCommunityByIdx(idx);
         return community.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -57,7 +56,7 @@ public class CommunityController {
 
     // 카테고리별 게시글 조회
     @GetMapping("/category/{category}")
-    public ResponseEntity<List<CommunityDTO>> getPostsByCategory(@PathVariable String category) {
+    public ResponseEntity<List<CommunityDTO>> getPostsByCategory(@PathVariable("category") String category) {
         List<CommunityDTO> communities = service.getPostsByCategory(category);
         return ResponseEntity.ok(communities);
     }
@@ -84,7 +83,7 @@ public class CommunityController {
 
     // 카테고리별로 최신 글 4개 가져오기
     @GetMapping("/latest/{category}")
-    public List<CommunityDTO> getLatestPostsByCategory(@PathVariable String category) {
+    public List<CommunityDTO> getLatestPostsByCategory(@PathVariable("category") String category) {
         return service.getLatestPostsByCategory(category);
     }
 

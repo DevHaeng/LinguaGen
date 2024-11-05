@@ -45,6 +45,9 @@ dependencies {
 
 	// Hibernate
 	implementation 'org.hibernate.orm:hibernate-core:6.2.12.Final'
+
+	// OpenAI 공식 Java 클라이언트
+	implementation 'com.theokanning.openai-gpt3-java:service:0.18.2'
 }
 
 

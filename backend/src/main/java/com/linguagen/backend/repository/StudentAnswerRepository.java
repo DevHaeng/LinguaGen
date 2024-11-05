@@ -24,9 +24,10 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
     Long countByStudentId(String studentId);
 
     // 특정 회원의 평균 정답률을 계산하는 메서드
-    @Query("SELECT (COUNT(s) * 1.0 / (SELECT COUNT(s2) FROM StudentAnswer s2 WHERE s2.studentId = :studentId)) "
-            + "FROM StudentAnswer s WHERE s.studentId = :studentId AND s.isCorrect = true")
+    @Query("SELECT (SUM(CASE WHEN s.isCorrect = true THEN 1 ELSE 0 END) * 1.0 / COUNT(s)) "
+            + "FROM StudentAnswer s WHERE s.studentId = :studentId")
     Double findAverageCorrectRateByStudentId(@Param("studentId") String studentId);
+
 
 
     // 이번주 학습한 요일 출력

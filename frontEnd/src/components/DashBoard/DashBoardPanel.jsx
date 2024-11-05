@@ -154,7 +154,6 @@ const DashBoardPanel = () => {
                                                     alt={`${gradeNames[latestStudyInfo.difficultyGrade]} 이미지`}
                                                     className='inline-block w-5 h-5 ml-2'
                                                 />
-                                                {` Tier ${latestStudyInfo.difficultyTier}`}
                                             <span>{gradeNames[latestStudyInfo.difficultyGrade] || "Unknown Grade"}</span>
                                             <span> {` ${latestStudyInfo.difficultyTier}`}</span>
                                         </>

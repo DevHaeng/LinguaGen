@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { FaBellSlash, FaChevronLeft, FaChevronRight, FaCog } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaBellSlash, FaCog } from 'react-icons/fa';
 import styled from 'styled-components';
 import { Card } from '@/components/ui/card.jsx';
 import play from '../assets/imgs/play.svg';
 import timer from '../assets/imgs/timer.svg';
+import axios from 'axios';
 
 const Header = styled.div`
   display: flex;
@@ -12,19 +13,11 @@ const Header = styled.div`
   font-weight: bold;
 `;
 
-const WeekSelector = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 20px 20px;
-`;
-
-const WeekArrowButton = styled.button`
-  background-color: #f1f3f5;
-  border: none;
-  padding: 5px;
-  border-radius: 5px;
-  cursor: pointer;
+const WeekLabel = styled.div`
+  text-align: center;
+  margin: 20px;
+  font-size: 18px;
+  font-weight: bold;
 `;
 
 const DaysContainer = styled.ul`
@@ -45,13 +38,13 @@ const DayCircle = styled.div`
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background-color: ${props => (props.selected ? '#00b894' : '#dee2e6')};
+  background-color: ${props => (props.studied ? '#ff6347' : '#dee2e6')};
   margin: 0 auto 10px;
 `;
 
 const DayLabel = styled.p`
   font-size: 14px;
-  color: ${props => (props.selected ? '#00b894' : '#6c757d')};
+  color: ${props => (props.studied ? '#ff6347' : '#6c757d')};
 `;
 
 const Footer = styled.div`
@@ -67,27 +60,6 @@ const FooterItem = styled.div`
   font-size: 14px;
   margin-right: 20px;
   position: relative;
-
-  &:hover > div {
-    visibility: visible;
-    opacity: 1;
-  }
-`;
-
-const Tooltip = styled.div`
-  position: absolute;
-  background-color: #000;
-  color: #fff;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  transform: translate(-50%, -120%);
-  opacity: ${({ visible }) => (visible ? 1 : 0)};
-  transition: opacity 0.2s ease;
-  left: ${({ x }) => x}px;
-  top: ${({ y }) => y}px;
 `;
 
 const FooterIcon = styled.div`
@@ -95,128 +67,99 @@ const FooterIcon = styled.div`
 `;
 
 const WeeklyLearning = () => {
-  const [selectedDay, setSelectedDay] = useState('화');
-  const [weekNumber, setWeekNumber] = useState(1);
-  const [month, setMonth] = useState(10);
-  const [year, setYear] = useState(2024);
-  const days = ['월', '화', '수', '목', '금', '토', '일'];
+    const days = ['월', '화', '수', '목', '금', '토', '일'];
 
-  const [tooltip, setTooltip] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    content: ''
-  });
+    const englishToKoreanDayMap = {
+        MONDAY: '월',
+        TUESDAY: '화',
+        WEDNESDAY: '수',
+        THURSDAY: '목',
+        FRIDAY: '금',
+        SATURDAY: '토',
+        SUNDAY: '일',
+    };
 
-  // 마우스가 아이템 위에 있을 때 툴팁을 보여주는 함수
-  const handleMouseMove = (e, content) => {
-    setTooltip({
-      visible: true,
-      x: e.clientX,
-      y: e.pageY,
-      content: content
-    });
-  };
+    const [studiedDays, setStudiedDays] = useState([]);
+    const [isLoggedIn, setIsLoggedIn] = useState(false); // 로그인 상태 정의
 
-  // 마우스가 아이템을 벗어났을 때 툴팁을 숨기는 함수
-  const handleMouseLeave = () => {
-    setTooltip({ ...tooltip, visible: false });
-  };
+    useEffect(() => {
+        const fetchStudyLog = async () => {
+            const user = sessionStorage.getItem('user');
+            if (user) {
+                setIsLoggedIn(true);
+                const userData = JSON.parse(user);
+                try {
+                    const response = await axios.get(`http://localhost:8085/api/study-log/this-week/${userData.id}`, { withCredentials: true });
 
-  const handlePreviousWeek = () => {
-    setWeekNumber(prevWeek => {
-      if (prevWeek === 1) {
-        setMonth(prevMonth => {
-          if (prevMonth === 1) {
-            setYear(prevYear => prevYear - 1); // 연도 감소
-            return 12; // 12월로 설정
-          }
-          return prevMonth - 1; // 월을 1 감소
-        });
-        return 4; // 주차를 4주차로 설정
-      }
-      return prevWeek - 1; // 주차를 1 감소
-    });
-  };
+                    const koreanDays = response.data.map(day => englishToKoreanDayMap[day]);
+                    setStudiedDays(koreanDays);
+                } catch (error) {
+                    console.error('Error fetching study log:', error);
+                }
+            }
+        };
 
-  const handleNextWeek = () => {
-    setWeekNumber(prevWeek => {
-      if (prevWeek === 4) {
-        setMonth(prevMonth => {
-          if (prevMonth === 12) {
-            setYear(prevYear => prevYear + 1); // 연도 증가
-            return 1; // 1월로 설정
-          }
-          return prevMonth + 1; // 월을 1 증가
-        });
-        return 1; // 주차를 1주차로 설정
-      }
-      return prevWeek + 1; // 주차를 1 증가
-    });
-  };
+        fetchStudyLog();
+    }, []);
 
-  return (
-    <Card className='w-full h-full ml-4 px-10 pb-10 pt-4'>
-      <Header style={{ marginBottom: '50px', userSelect: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <span>주간 학습</span>
-          <FaCog style={{ marginLeft: '10px', color: '#adb5bd', cursor: 'pointer' }} />
-        </div>
-        <button
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            outline: 'none'
-          }}
-        >
-          <FaBellSlash />
-          <span style={{ marginLeft: '5px' }}>알림 설정</span>
-        </button>
-      </Header>
+    // 현재 주차 계산 함수
+    const getWeekOfMonth = (date) => {
+        const startWeekDayIndex = 1; // 월요일 시작
+        const firstDate = new Date(date.getFullYear(), date.getMonth(), 1);
+        const firstDay = firstDate.getDay() || 7;
+        const offsetDate = date.getDate() + firstDay - startWeekDayIndex;
+        return Math.ceil(offsetDate / 7);
+    };
 
-      <WeekSelector>
-        <WeekArrowButton onClick={handlePreviousWeek}><FaChevronLeft /></WeekArrowButton>
-        <span style={{ margin: '0 15px' }}>{year}년 {month}월 {weekNumber}주차</span>
-        <WeekArrowButton onClick={handleNextWeek}><FaChevronRight /></WeekArrowButton>
-      </WeekSelector>
+    const currentWeek = getWeekOfMonth(new Date());
 
-      <DaysContainer style={{ marginBottom: '50px' }}>
-        {days.map(day => (
-          <DayItem key={day} onClick={() => setSelectedDay(day)}>
-            <DayCircle selected={selectedDay === day} />
-            <DayLabel selected={selectedDay === day}>{day}</DayLabel>
-          </DayItem>
-        ))}
-      </DaysContainer>
+    return (
+        <Card className='w-full h-full ml-4 px-10 pb-10 pt-4'>
+            <Header style={{ marginBottom: '50px', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span>주간 학습</span>
+                    <FaCog style={{ marginLeft: '10px', color: '#adb5bd', cursor: 'pointer' }} />
+                </div>
+                <button
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        outline: 'none'
+                    }}
+                >
+                    <FaBellSlash />
+                    <span style={{ marginLeft: '5px' }}>알림 설정</span>
+                </button>
+            </Header>
 
-      <Footer style={{ userSelect: 'none' }}>
-        <FooterItem
-          onMouseMove={(e) => handleMouseMove(e, '플레이 횟수: 0')}
-          onMouseLeave={handleMouseLeave}
-        >
-          <FooterIcon><img src={play} alt='play' /></FooterIcon>
-          <span>0</span>
-        </FooterItem>
-        <FooterItem
-          onMouseMove={(e) => handleMouseMove(e, '플레이 타임: 0분')}
-          onMouseLeave={handleMouseLeave}
-        >
-          <FooterIcon><img src={timer} alt='timer' /></FooterIcon>
-          <span>0분</span>
-        </FooterItem>
-      </Footer>
+            <WeekLabel>
+                {new Date().getFullYear()}년 {new Date().getMonth() + 1}월 {currentWeek}주차
+            </WeekLabel>
 
-      {/* 툴팁 */}
-      {tooltip.visible && (
-        <Tooltip x={tooltip.x} y={tooltip.y - window.scrollY} visible={tooltip.visible}>
-          {tooltip.content}
-        </Tooltip>
-      )}
-    </Card>
-  );
+            <DaysContainer style={{ marginBottom: '50px' }}>
+                {days.map(day => (
+                    <DayItem key={day}>
+                        <DayCircle studied={studiedDays.includes(day)} />
+                        <DayLabel studied={studiedDays.includes(day)}>{day}</DayLabel>
+                    </DayItem>
+                ))}
+            </DaysContainer>
+
+            <Footer style={{ userSelect: 'none' }}>
+                <FooterItem>
+                    <FooterIcon><img src={play} alt='play' /></FooterIcon>
+                    <span>0</span>
+                </FooterItem>
+                <FooterItem>
+                    <FooterIcon><img src={timer} alt='timer' /></FooterIcon>
+                    <span>0분</span>
+                </FooterItem>
+            </Footer>
+        </Card>
+    );
 };
 
 export default WeeklyLearning;

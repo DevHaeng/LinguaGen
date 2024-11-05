@@ -5,16 +5,21 @@ import com.linguagen.backend.dto.LatestStudyInfoDto;
 import com.linguagen.backend.entity.Question;
 import com.linguagen.backend.entity.StudentAnswer;
 import com.linguagen.backend.repository.StudentAnswerRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DashBoardService {
 
     private final StudentAnswerRepository studentAnswerRepository;
 
+    @Autowired
     public DashBoardService(StudentAnswerRepository studentAnswerRepository) {
         this.studentAnswerRepository = studentAnswerRepository;
     }
@@ -40,5 +45,25 @@ public class DashBoardService {
 
     public List<DailyPlayCountDto> getDailyPlayCounts(String studentId) {
         return studentAnswerRepository.findDailyPlayCountsByStudentId(studentId);
+    }
+
+    // 특정 studentId에 대한 게임 진행 수 반환
+    public Long getGameCountByStudentId(String studentId) {
+        return studentAnswerRepository.countByStudentId(studentId);
+    }
+
+    // 정답률 반환
+    public Double getAverageCorrectRateByStudentId(String studentId) {
+        return studentAnswerRepository.findAverageCorrectRateByStudentId(studentId);
+    }
+
+    public List<String> getStudyDaysThisWeekByStudentId(String studentId) {
+        LocalDateTime startOfWeek = LocalDate.now().with(java.time.DayOfWeek.MONDAY).atStartOfDay();
+        LocalDateTime endOfWeek = startOfWeek.plusDays(6).withHour(23).withMinute(59).withSecond(59);
+        List<StudentAnswer> studyLogs = studentAnswerRepository.findByStudentIdAndCreatedAtBetween(studentId, startOfWeek, endOfWeek);
+        return studyLogs.stream()
+                .map(studyLog -> studyLog.getCreatedAt().getDayOfWeek().toString())
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

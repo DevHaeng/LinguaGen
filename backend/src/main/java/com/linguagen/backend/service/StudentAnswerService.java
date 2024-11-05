@@ -31,4 +31,6 @@ public class StudentAnswerService {
 
         return studentAnswerRepository.save(answer); // 데이터가 삽입되면 트리거가 작동
     }
+
+
 }

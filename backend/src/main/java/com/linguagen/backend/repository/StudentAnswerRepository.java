@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,17 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
             "WHERE s.studentId = :studentId " +
             "GROUP BY DATE(s.createdAt)")
     List<DailyPlayCountDto> findDailyPlayCountsByStudentId(@Param("studentId") String studentId);
+
+    Long countByStudentId(String studentId);
+
+    // 특정 회원의 평균 정답률을 계산하는 메서드
+    @Query("SELECT (COUNT(s) * 1.0 / (SELECT COUNT(s2) FROM StudentAnswer s2 WHERE s2.studentId = :studentId)) "
+            + "FROM StudentAnswer s WHERE s.studentId = :studentId AND s.isCorrect = true")
+    Double findAverageCorrectRateByStudentId(@Param("studentId") String studentId);
+
+
+    // 이번주 학습한 요일 출력
+    List<StudentAnswer> findByStudentIdAndCreatedAtBetween(String studentId, LocalDateTime startDate, LocalDateTime endDate);
 
 
 

@@ -35,4 +35,48 @@ public class DashBoardController {
         List<DailyPlayCountDto> dailyPlayCounts = dashBoardService.getDailyPlayCounts(studentId);
         return ResponseEntity.ok(dailyPlayCounts);
     }
+
+    // 특정 회원의 게임 진행 수 반환 API
+    @GetMapping("/game-count/{studentId}")
+    public Long getGameCount(@PathVariable("studentId") String studentId) {
+        return dashBoardService.getGameCountByStudentId(studentId);
+    }
+
+    // 정답률 반환
+    @GetMapping("/average-correct-rate/{studentId}")
+    public ResponseEntity<Double> getAverageCorrectRate(@PathVariable("studentId") String studentId) {
+        Double averageCorrectRate = dashBoardService.getAverageCorrectRateByStudentId(studentId);
+
+        if (averageCorrectRate == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(averageCorrectRate);
+    }
+
+    // 이번주 학습한 요일 반환
+    @GetMapping("/this-week/{studentId}")
+    public ResponseEntity<List<String>> getStudyLogThisWeek(@PathVariable("studentId") String studentId) {
+        List<String> studyDays = dashBoardService.getStudyDaysThisWeekByStudentId(studentId);
+        return ResponseEntity.ok(studyDays);
+    }
+
+    public static class StudyLogResponse {
+        private boolean studiedThisWeek;
+
+        public StudyLogResponse(boolean studiedThisWeek) {
+            this.studiedThisWeek = studiedThisWeek;
+        }
+
+        public boolean isStudiedThisWeek() {
+            return studiedThisWeek;
+        }
+
+        public void setStudiedThisWeek(boolean studiedThisWeek) {
+            this.studiedThisWeek = studiedThisWeek;
+        }
+
+
+    }
+
 }

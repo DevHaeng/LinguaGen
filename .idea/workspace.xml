@@ -4,13 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9064e66a-c41b-431e-9930-c12a3418d94e" name="Changes" comment="대시보드 최근플레이">
+    <list default="true" id="9064e66a-c41b-431e-9930-c12a3418d94e" name="Changes" comment="대시보드 달력 연동">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/controller/DashBoardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/controller/DashBoardController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/repository/StudentAnswerRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/repository/StudentAnswerRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/service/DashBoardService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/service/DashBoardService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontEnd/src/components/DashBoard/DashBoardPanel.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontEnd/src/components/DashBoard/DashBoardPanel.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontEnd/src/components/HeatMap.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontEnd/src/components/HeatMap.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/service/StudentAnswerService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/linguagen/backend/service/StudentAnswerService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontEnd/src/components/DashBoard/DashBoardPageSide.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontEnd/src/components/DashBoard/DashBoardPageSide.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontEnd/src/components/WeeklyLearning.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontEnd/src/components/WeeklyLearning.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,12 +60,12 @@
     &quot;assignee&quot;: &quot;DevHaeng&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/DevHaeng/LinguaGen.git",
-    "accountId": "a091dcba-7732-4bc6-9041-dbd6aabe7cc5"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/DevHaeng/LinguaGen.git&quot;,
+    &quot;accountId&quot;: &quot;a091dcba-7732-4bc6-9041-dbd6aabe7cc5&quot;
   }
-}]]></component>
+}</component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
@@ -81,33 +82,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.Build backend.executor": "Run",
-    "Gradle.backend 빌드.executor": "Run",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "Spring Boot.BackendApplication.executor": "Run",
-    "git-widget-placeholder": "main",
-    "jdk.selected.JAVA_MODULE": "17",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/LinguaGen",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
-    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2024.2.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build backend.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.backend 빌드.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;Spring Boot.BackendApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;17&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/LinguaGen&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\IntelliJ IDEA 2024.2.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\LinguaGen" />
@@ -159,7 +160,8 @@
       <workItem from="1730247321908" duration="1052000" />
       <workItem from="1730248401102" duration="2524000" />
       <workItem from="1730251157968" duration="278000" />
-      <workItem from="1730679245216" duration="20355000" />
+      <workItem from="1730679245216" duration="23163000" />
+      <workItem from="1730765065035" duration="14203000" />
     </task>
     <task id="LOCAL-00001" summary="Changes">
       <option name="closed" value="true" />
@@ -177,7 +179,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730692104358</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="대시보드 달력 연동">
+      <option name="closed" value="true" />
+      <created>1730703705002</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1730703705002</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -214,7 +224,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Changes" />
     <MESSAGE value="대시보드 최근플레이" />
-    <option name="LAST_COMMIT_MESSAGE" value="대시보드 최근플레이" />
+    <MESSAGE value="대시보드 달력 연동" />
+    <option name="LAST_COMMIT_MESSAGE" value="대시보드 달력 연동" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -222,7 +233,6 @@
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/frontEnd/src/components/MainPageComponents/ProfileCard.jsx</url>
           <line>2</line>
-          <properties lambdaOrdinal="-1" />
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

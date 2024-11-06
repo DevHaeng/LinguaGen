@@ -57,8 +57,10 @@ const DashBoardPageSide = ({ activePanel, setActivePanel }) => {
     }, []);
 
     return (
-        <div className='flex flex-col items-center justify-start w-80 border-2 border-gray-300 rounded-lg jua-regular' style={{backdropFilter : 'blur(15px)' , background : 'rgba(255, 255, 255, 0.2', height : 'auto'}}>
-            <div className='flex flex-col items-start justify-between w-full h-48 pt-4 p-4'>
+        <div className='flex flex-col items-center justify-start w-80 border-2 border-gray-300 rounded-lg jua-regular
+        max-lg:flex-row max-lg:w-full max-lg:h-20
+        ' style={{backdropFilter : 'blur(15px)' , background : 'rgba(255, 255, 255, 0.2', height : 'auto'}}>
+            <div className='flex flex-col items-start justify-between w-full h-48 pt-4 p-4 max-lg:items-center'>
                 <Avatar className='w-20 h-20 ml-4'>
                     <AvatarImage
                         src={"https://github.com/shadcn.png"}
@@ -69,9 +71,9 @@ const DashBoardPageSide = ({ activePanel, setActivePanel }) => {
                     <AvatarFallback>VC</AvatarFallback>
                 </Avatar>
                 {/* 닉네임 표시 */}
-                <p className='text-center w-1/2 mt-4 kanit-regular'>{nickname || 'Guest'}</p>
+                <p className='text-center w-1/2 mt-4 max-lg:mt-0 kanit-regular'>{nickname || 'Guest'}</p>
             </div>
-            <Separator className='w-full mt-8 mb-8 border-2' />
+            <Separator className='w-full mt-8 mb-8 border-2 max-lg:hidden' />
             <div className='flex flex-row justify-between w-full'>
                 <div className='flex flex-col w-full h-12 items-center justify-start'>
                     <p className='font-bold'> 게임 진행 수</p>
@@ -84,8 +86,8 @@ const DashBoardPageSide = ({ activePanel, setActivePanel }) => {
                     <p>{averageCorrectRate !== null ? `${Math.floor(averageCorrectRate * 100)}%` : '-'}</p>
                 </div>
             </div>
-            <Separator className='w-full mt-8 mb-8 border-2'/>
-            <div className='flex flex-col w-full h-full items-start justify-start text-xl'>
+            <Separator className='w-full mt-8 mb-8 border-2 max-lg:hidden'/>
+            <div className='flex flex-col w-full h-full items-start justify-start text-xl max-lg:items-center'>
             <Item
                     isActive={activePanel === 'dashboard'}
                     onClick={() => setActivePanel('dashboard')}
@@ -95,7 +97,7 @@ const DashBoardPageSide = ({ activePanel, setActivePanel }) => {
                 <Item
                     isActive={activePanel === 'badge'}
                     onClick={() => setActivePanel('badge')}
-                    style={{marginBottom : '45px'}}
+                    className='max-lg:mb-0 mb-12'
                 >
                     뱃지 / 업적
                 </Item>

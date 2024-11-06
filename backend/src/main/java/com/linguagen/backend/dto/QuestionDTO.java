@@ -26,7 +26,6 @@ public class QuestionDTO {
     private String explanation;
     private List<ChoicesDTO> choices;
 
-    // Web API 응답에서 불필요한 필드 제외
     @JsonIgnore
     private LocalDateTime createdAt;
 

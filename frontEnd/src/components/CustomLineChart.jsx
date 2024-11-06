@@ -72,7 +72,7 @@ export function CustomLineChart() {
         <CardTitle>월별 랭킹 차트</CardTitle>
         <CardDescription>April - October 2024</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className='max-lg:flex max-lg:justify-center max-lg:items-center'>
         <ChartContainer config={chartConfig} style={{marginTop : '45px', marginBottom : '95px' , height : '150px'}}>
           <RechartsLineChart
             accessibilityLayer
@@ -121,7 +121,7 @@ export function CustomLineChart() {
           </RechartsLineChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
+      <CardFooter className="flex-col items-start gap-2 text-sm max-lg:flex max-lg:justify-center max-lg:items-center">
         <div className="flex gap-2 font-medium leading-none mb-4" style={{fontSize : '16px', fontWeight : 'bold'}}>
           랭킹이 50% 상승하였습니다! <TrendingUp className="h-4 w-4" />
         </div>

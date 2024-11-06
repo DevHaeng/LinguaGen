@@ -30,14 +30,14 @@ public class CommunityController {
 
     // 게시글 수정
     @PutMapping("/{idx}")
-    public ResponseEntity<CommunityDTO> updateCommunityPost(@PathVariable("idx") Long idx, @RequestBody CommunityDTO updateCommunity, @RequestParam String userId) {
+    public ResponseEntity<CommunityDTO> updateCommunityPost(@PathVariable("idx") Long idx, @RequestBody CommunityDTO updateCommunity, @RequestParam("userId") String userId) {
         Optional<CommunityDTO> updated = service.updateCommunityPost(idx, updateCommunity, userId);
         return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // 게시글 삭제
     @DeleteMapping("/{idx}")
-    public ResponseEntity<Void> deleteCommunityPost(@PathVariable("idx") Long idx, @RequestParam String userId) {
+    public ResponseEntity<Void> deleteCommunityPost(@PathVariable("idx") Long idx, @RequestParam("userId") String userId) {
         boolean deleted = service.deleteCommunityPost(idx, userId);
         return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
@@ -92,7 +92,7 @@ public class CommunityController {
     // 사용자가 작성한 게시글 확인
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<CommunityDTO>> getUserCommunityPosts(
-            @PathVariable String userId,
+            @PathVariable("userId") String userId,
             @PageableDefault(size = 12) Pageable pageable) {
         Page<CommunityDTO> communities = service.getUserCommunityPosts(userId, pageable);
         return ResponseEntity.ok(communities);

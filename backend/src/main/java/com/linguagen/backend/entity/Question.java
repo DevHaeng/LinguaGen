@@ -16,7 +16,13 @@ import java.util.List;
 public class Question {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "question_sequence")
+    @SequenceGenerator(
+        name = "question_sequence",
+        sequenceName = "question_seq",
+        initialValue = 5041,  // 5040 다음 번호부터 시작
+        allocationSize = 1
+    )
     @Column(name = "idx", nullable = false, columnDefinition = "int unsigned")
     private Long idx; // 문제 식별자
 
@@ -64,8 +70,13 @@ public class Question {
 
     // 연관관계 편의 메서드
     public void addChoice(Choices choice) {
+        if (choices == null) {
+            choices = new ArrayList<>();
+        }
         choices.add(choice);
-        choice.setQuestion(this);
+        if (choice.getQuestion() != this) {
+            choice.setQuestion(this);  // 양방향 관계 설정 보장
+        }
     }
 
     public void removeChoice(Choices choice) {

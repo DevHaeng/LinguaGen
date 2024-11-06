@@ -42,6 +42,9 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
         @Param("count") int count
     );
 
+    @Query("SELECT MAX(q.idx) FROM Question q")
+    Long findLastQuestionIdx();
+
     // 같은 등급과 티어 문제 조회
     @Query("SELECT q FROM Question q WHERE q.diffGrade = :grade AND q.diffTier = :tier ORDER BY q.diffTier DESC")
     List<Question> findByDiffGradeAndDiffTierWithChoices(@Param("grade") Byte grade, @Param("tier") Byte tier, Pageable pageable);

@@ -28,25 +28,22 @@ import {
   Bell,
   BookOpen,
   Bot,
-  ChevronRight,
   ChevronsUpDown,
   Command,
   CreditCard,
   Folder,
-  Frame,
   LifeBuoy,
   LogOut,
-  Map,
   MoreHorizontal as MoreHorizontalIcon,
-  PieChart,
   Send,
   Settings2,
   Share,
   Sparkles,
-  SquareTerminal,
   Trash2,
   BotMessageSquare,
+  Headphones,
   Plus,
+  BookCheck
 } from "lucide-react"
 
 import {
@@ -71,6 +68,8 @@ import { Separator } from "@/components/ui/separator"
 import axios from "axios";
 import LearningInsetContent from './LearningInsetContent';
 import ChatInsetContent from './ChatInsetContent';
+import CreateCustom from './CreateCustom';
+import ListCustom from './ListCustom';
 
 // 추가된 데이터 객체
 const data = {
@@ -88,14 +87,17 @@ const data = {
       items: [
         {
           title: "Listening",
+          icon: Headphones,
           url: "#",
         },
         {
           title: "Reading",
+          icon: BookOpen,
           url: "#",
         },
         {
           title: "ETC",
+          icon: Command,
           url: "#",
         },
       ],
@@ -291,7 +293,7 @@ const MainContainer = ({ selectedGame }) => {
       console.error('메시지 전송 오류:', error);
       console.error('Response data:', error.response?.data);
 
-      // 에러 발생 시 사용자에게 알림
+      // 에러 발생 시 사용자에��� 알림
       setChatRooms(prev => ({
         ...prev,
         [activeRoomId]: [
@@ -402,27 +404,33 @@ const MainContainer = ({ selectedGame }) => {
   };
 
   const renderInsetContent = () => {
-    if (selectedMenu === 'Reading') {
-      return (
+    switch (selectedMenu) {
+      case 'Reading':
+        return (
           <LearningInsetContent
-              scrollContainerRef={scrollContainerRef}
-              overscrollShadow={overscrollShadow}
-              visibleCards={visibleCards}
-              wrongWords={wrongWords}
-              loading={loading}
+            scrollContainerRef={scrollContainerRef}
+            overscrollShadow={overscrollShadow}
+            visibleCards={visibleCards}
+            wrongWords={wrongWords}
+            loading={loading}
           />
-      );
-    } else if (selectedMenu === 'ChatBot') {
-      return (
+        );
+      case 'ChatBot':
+        return (
           <ChatInsetContent
-              activeRoomId={activeRoomId}
-              chatRooms={chatRooms}
-              addNewChatRoom={addNewChatRoom}
-              sendMessage={sendMessage}
+            activeRoomId={activeRoomId}
+            chatRooms={chatRooms}
+            addNewChatRoom={addNewChatRoom}
+            sendMessage={sendMessage}
           />
-      );
+        );
+      case 'Create':
+        return <CreateCustom />;
+      case 'List':
+        return <ListCustom />;
+      default:
+        return null;
     }
-    return null;
   };
 
   // Lottie 옵션 수정
@@ -457,7 +465,7 @@ const MainContainer = ({ selectedGame }) => {
   };
 
   return (
-      <div className={`w-full h-full flex flex-col items-center justify-start mx-12 bg-white rounded-lg
+      <div className={`w-full h-full flex flex-col items-center justify-start bg-white rounded-lg
       transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}
       >
         {isLoggedIn ? (
@@ -536,7 +544,10 @@ const MainContainer = ({ selectedGame }) => {
                       </SidebarHeader>
                       <SidebarContent>
                         <SidebarGroup>
-                          <SidebarGroupLabel>Learning</SidebarGroupLabel>
+                          
+                          <SidebarGroupLabel>
+                            Learning
+                          </SidebarGroupLabel>
                           <SidebarMenu>
                             {data.navMain[0].items.map((item) => (
                                 <SidebarMenuItem key={item.title}>
@@ -546,7 +557,8 @@ const MainContainer = ({ selectedGame }) => {
                                       onClick={() => handleMenuClick(item.title)}
                                   >
                                     <a href={item.url}>
-                                      <span>{item.title}</span>
+                                      <item.icon />
+                                      <span className='ml-2'>{item.title}</span>
                                     </a>
                                   </SidebarMenuButton>
                                 </SidebarMenuItem>
@@ -594,6 +606,35 @@ const MainContainer = ({ selectedGame }) => {
                               <SidebarMenuButton onClick={addNewChatRoom}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 <span>New Chat</span>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          </SidebarMenu>
+                        </SidebarGroup>
+                        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+                          <SidebarGroupLabel>Custom</SidebarGroupLabel>
+                          <SidebarMenu>
+                            <SidebarMenuItem>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={selectedMenu === 'Create'}
+                                onClick={() => handleMenuClick('Create')}
+                              >
+                                <a href="#">
+                                  <BookCheck className="h-4 w-4 mr-2" />
+                                  <span>Create</span>
+                                </a>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={selectedMenu === 'List'}
+                                onClick={() => handleMenuClick('List')}
+                              >
+                                <a href="#">
+                                  <BookOpen className="h-4 w-4 mr-2" />
+                                  <span>List</span>
+                                </a>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
                           </SidebarMenu>
@@ -711,7 +752,8 @@ const MainContainer = ({ selectedGame }) => {
                             <BreadcrumbList>
                               <BreadcrumbItem className="hidden md:block">
                                 <BreadcrumbLink href="#" onClick={() => handleMenuClick('Reading')}>
-                                  {selectedMenu === 'ChatBot' ? 'ChatBot' : 'Learning'}
+                                  {selectedMenu === 'ChatBot' ? 'ChatBot' : 
+                                   (selectedMenu === 'Create' || selectedMenu === 'List') ? 'Custom' : 'Learning'}
                                 </BreadcrumbLink>
                               </BreadcrumbItem>
                               {selectedMenu && (
@@ -719,7 +761,9 @@ const MainContainer = ({ selectedGame }) => {
                                     <BreadcrumbSeparator className="hidden md:block" />
                                     <BreadcrumbItem>
                                       <BreadcrumbPage>
-                                        {selectedMenu === 'ChatBot' ? activeRoomId : selectedMenu}
+                                        {selectedMenu === 'ChatBot' ? activeRoomId : 
+                                         selectedMenu === 'Create' ? 'Create Question' :
+                                         selectedMenu === 'List' ? 'My Questions' : selectedMenu}
                                       </BreadcrumbPage>
                                     </BreadcrumbItem>
                                   </>

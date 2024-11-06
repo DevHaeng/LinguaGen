@@ -10,7 +10,7 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-  } from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip"
 
 const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: currentQuestionNumber, totalQuestions, isGameOver, isGameClear, onRestart, onMainMenu }) => {
     const navigate = useNavigate();
@@ -30,8 +30,8 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
 
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 
-       // Lottie 옵션 설정
-       const correctOptions = {
+    // Lottie 옵션 설정
+    const correctOptions = {
         loop: false,
         autoplay: true,
         animationData: CorrectAnimation,
@@ -139,7 +139,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
 
         // 서버에 답안 제출 시 questionId를 올바르게 전달
         const questionId = currentQuestion.idx; // 문제의 고유 ID
-        
+
         // 서버로 전송할 데이터 구조 단순화
         const submitData = {
             idx: questionId,
@@ -200,6 +200,15 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
         }, 1000);
     };
 
+    // 또는 첫 글자와 마지막 글자를 보여주고 싶을 때
+    const generateHint = (answer) => {
+        if (!answer) return '';
+        const first = answer.slice(0, 1);
+        const last = answer.slice(-1);
+        const middle = '_'.repeat(answer.length - 2);
+        return `${first}${middle}${last}`;
+    };
+
     const renderQuestion = () => {
         if (!currentQuestion) return null;
 
@@ -226,7 +235,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                             <p>Bronze-4 의 난이도 입니다.</p>
                                         </TooltipContent>
                                     </Tooltip>
-                                </TooltipProvider>  
+                                </TooltipProvider>
                             </div>
                             {currentQuestion.passage && (
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
@@ -241,18 +250,16 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                                 return (
                                                     <div key={index} className={`flex items-start gap-2 ${speaker === 'B' ? 'flex-row-reverse' : ''}`}>
                                                         {/* 화자 아바타 */}
-                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                                            speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'
-                                                        }`}>
+                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'
+                                                            }`}>
                                                             <span className="text-white font-bold">{speaker}</span>
                                                         </div>
-                                                        
+
                                                         {/* 대화 내용 */}
-                                                        <div className={`max-w-[75%] p-3 rounded-lg ${
-                                                            speaker === 'A' 
-                                                                ? 'bg-white shadow-sm rounded-tl-none border border-gray-100' 
+                                                        <div className={`max-w-[75%] p-3 rounded-lg ${speaker === 'A'
+                                                                ? 'bg-white shadow-sm rounded-tl-none border border-gray-100'
                                                                 : 'bg-white shadow-sm rounded-tr-none border border-gray-100'
-                                                        }`}>
+                                                            }`}>
                                                             <p className="kanit-regular text-lg leading-relaxed">
                                                                 {content}
                                                             </p>
@@ -281,30 +288,31 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                         onClick={() => !showFeedback && handleAnswer(index)}
                                         onMouseEnter={() => showFeedback && selectedAnswer === index && setHoveredAnswer(index)}
                                         onMouseLeave={() => setHoveredAnswer(null)}
-                                        className={`relative h-full rounded-lg shadow-md transition-all duration-300 hover:shadow-lg h-32 flex flex-col ${
-                                            showFeedback && selectedAnswer !== index ? 'cursor-not-allowed opacity-50' : ''
-                                        }`}
+                                        className={`relative rounded-lg shadow-md transition-all duration-300 hover:shadow-lg flex flex-col ${showFeedback && selectedAnswer !== index ? 'cursor-not-allowed opacity-50' : ''
+                                            }`}
                                         style={{
                                             backgroundColor: colors[index],
+                                            minHeight: '120px',
+                                            height: 'auto'
                                         }}
-                                        whileHover={!showFeedback || selectedAnswer === index ? {scale: 1.02} : {}}
-                                        whileTap={!showFeedback || selectedAnswer === index ? {scale: 0.98} : {}}
+                                        whileHover={!showFeedback || selectedAnswer === index ? { scale: 1.02 } : {}}
+                                        whileTap={!showFeedback || selectedAnswer === index ? { scale: 0.98 } : {}}
                                     >
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
-                                            <span className="text-2xl font-bold mb-2 text-white">
+                                        <div className="w-full h-full flex flex-col items-center justify-start p-4">
+                                            <span className="text-2xl font-bold mb-2 text-white shrink-0">
                                                 {['A', 'B', 'C', 'D'][index]}
                                             </span>
-                                            <p className="text-lg text-white w-full px-4">
+                                            <p className="text-lg text-white w-full px-4 overflow-y-auto max-h-[120px] custom-scrollbar">
                                                 {option}
                                             </p>
                                         </div>
-                                        
+
                                         <AnimatePresence>
                                             {showFeedback && selectedAnswer === index && (
                                                 <motion.div
-                                                    initial={{opacity: 0}}
-                                                    animate={{opacity: 1}}
-                                                    exit={{opacity: 0}}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
                                                     className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center"
                                                     onMouseEnter={() => setHoveredAnswer(index)}
                                                     onMouseLeave={() => setHoveredAnswer(null)}
@@ -319,7 +327,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                                             />
                                                         </div>
                                                     )}
-                                                    
+
                                                     {hoveredAnswer === index && (
                                                         <motion.div
                                                             initial={{ opacity: 0, y: 10 }}
@@ -377,7 +385,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                             <p>Bronze-4 의 난이도 입니다.</p>
                                         </TooltipContent>
                                     </Tooltip>
-                                </TooltipProvider>  
+                                </TooltipProvider>
                             </div>
                             {currentQuestion.passage && (
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
@@ -392,18 +400,16 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                                 return (
                                                     <div key={index} className={`flex items-start gap-2 ${speaker === 'B' ? 'flex-row-reverse' : ''}`}>
                                                         {/* 화자 아바타 */}
-                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                                            speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'
-                                                        }`}>
+                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'
+                                                            }`}>
                                                             <span className="text-white font-bold">{speaker}</span>
                                                         </div>
-                                                        
+
                                                         {/* 대화 내용 */}
-                                                        <div className={`max-w-[75%] p-3 rounded-lg ${
-                                                            speaker === 'A' 
-                                                                ? 'bg-white shadow-sm rounded-tl-none border border-gray-100' 
+                                                        <div className={`max-w-[75%] p-3 rounded-lg ${speaker === 'A'
+                                                                ? 'bg-white shadow-sm rounded-tl-none border border-gray-100'
                                                                 : 'bg-white shadow-sm rounded-tr-none border border-gray-100'
-                                                        }`}>
+                                                            }`}>
                                                             <p className="kanit-regular text-lg leading-relaxed">
                                                                 {content}
                                                             </p>
@@ -425,15 +431,27 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                         {/* 오른쪽 패널: 답안 입력 */}
                         <div className="w-1/2 h-full p-6 flex flex-col items-center justify-center relative">
                             <div className="w-full max-w-md">
+                                {/* 힌트 표시 */}
+                                <div className="text-center mb-4">
+                                    <p className="text-2xl font-mono tracking-wider">
+                                        {generateHint(currentQuestion.correctAnswer)}
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-2">
+                                        Fill in the blank with the correct answer
+                                    </p>
+                                </div>
+
                                 <input
                                     type="text"
                                     value={userAnswer}
                                     onChange={(e) => setUserAnswer(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleAnswer(userAnswer)}
-                                    className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg mb-4 focus:border-blue-500 focus:outline-none"
-                                    placeholder="Enter your answer..."
+                                    className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg mb-4 focus:border-blue-500 focus:outline-none text-center font-mono tracking-wider"
+                                    placeholder="Type your answer..."
                                     disabled={showFeedback}
+                                    maxLength={currentQuestion.correctAnswer.length}
                                 />
+
                                 <motion.button
                                     onClick={() => handleAnswer(userAnswer)}
                                     className="w-full p-4 bg-blue-500 text-white rounded-lg text-lg font-semibold"
@@ -465,7 +483,7 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
                                                         />
                                                     </div>
                                                 )}
-                                                
+
                                                 {/* 호버 시 나타나는 버튼들 */}
                                                 {hoveredAnswer && (
                                                     <motion.div
@@ -584,57 +602,57 @@ const GameProgressPage = ({ onCorrectAnswer, onWrongAnswer, currentQuestion: cur
 
     return (
         <div className="h-full w-full overflow-visible bg-gray-50 relative">
-            <motion.div 
-                    className="flex h-full"
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                        duration: 1.2,
-                        ease: "easeOut"
-                    }}
-                >
-                    <div className="flex-1">
-                        {renderQuestion()}
-                    </div>
+            <motion.div
+                className="flex h-full"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                    duration: 1.2,
+                    ease: "easeOut"
+                }}
+            >
+                <div className="flex-1">
+                    {renderQuestion()}
+                </div>
 
-                    {/* 해설 모달 */}
-                    <AnimatePresence>
-                        {showExplanation && (
+                {/* 해설 모달 */}
+                <AnimatePresence>
+                    {showExplanation && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-visible"
+                            onClick={() => setShowExplanation(false)}
+                        >
                             <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-visible"
-                                onClick={() => setShowExplanation(false)}
+                                initial={{ scale: 0.9, opacity: 0, y: -20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: -20 }}
+                                className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 absolute top-[-50%] transform -translate-x-1/2"
+                                onClick={e => e.stopPropagation()}
                             >
-                                <motion.div
-                                    initial={{ scale: 0.9, opacity: 0, y: -20 }}
-                                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                                    exit={{ scale: 0.9, opacity: 0, y: -20 }}
-                                    className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 absolute top-[-50%] transform -translate-x-1/2"
-                                    onClick={e => e.stopPropagation()}
-                                >
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="font-bold text-xl text-gray-700">💡 해설</h4>
-                                        <button
-                                            onClick={() => setShowExplanation(false)}
-                                            className="text-gray-400 hover:text-gray-600"
-                                        >
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <div className="text-lg text-gray-600 leading-relaxed">
-                                        <p className="whitespace-pre-line break-words">
-                                            {currentQuestion.explanation}
-                                        </p>
-                                    </div>
-                                </motion.div>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-bold text-xl text-gray-700">💡 해설</h4>
+                                    <button
+                                        onClick={() => setShowExplanation(false)}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="text-lg text-gray-600 leading-relaxed">
+                                    <p className="whitespace-pre-line break-words">
+                                        {currentQuestion.explanation}
+                                    </p>
+                                </div>
                             </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
         </div>
     );
 };

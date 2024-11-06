@@ -56,86 +56,96 @@ public class QuestionService {
         return getQuestionsInOrder(userGrade, userTier);
     }
 
+    // 높은 난이도 문제 선택 로직 수정
+    private List<Question> getHigherLevelQuestions(byte grade, byte tier, Pageable pageable) {
+        List<Question> higherQuestions = new ArrayList<>();
 
+        if (grade == 1 && tier == 4) {
+            // 브론즈 4의 경우 브론즈 3만 가져오기
+            return questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                (byte)1,
+                (byte)3,
+                pageable
+            );
+        }
 
+        if (tier == 1) {
+            // 현재 티어가 1이면 다음 등급의 4티어로
+            if (grade < 6) {  // 챌린저가 아닌 경우
+                return questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                    (byte)(grade + 1),
+                    (byte)4,
+                    pageable
+                );
+            }
+        } else {
+            // 같은 등급의 한 단계 높은 티어
+            return questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                grade,
+                (byte)(tier - 1),
+                pageable
+            );
+        }
+
+        return higherQuestions;
+    }
+
+    // 낮은 난이도 문제 선택 로직 수정
+    private List<Question> getLowerLevelQuestions(byte grade, byte tier, Pageable pageable) {
+        List<Question> lowerQuestions = new ArrayList<>();
+
+        if (grade == 1 && tier == 4) {
+            // 브론즈 4는 lower가 없음
+            return lowerQuestions;
+        }
+
+        if (tier == 4) {
+            // 현재 티어가 4면 이전 등급의 1티어로
+            if (grade > 1) {  // 브론즈가 아닌 경우
+                return questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                    (byte)(grade - 1),
+                    (byte)1,
+                    pageable
+                );
+            }
+        } else {
+            // 같은 등급의 한 단계 낮은 티어
+            return questionRepository.findByDiffGradeAndDiffTierWithChoices(
+                grade,
+                (byte)(tier + 1),
+                pageable
+            );
+        }
+
+        return lowerQuestions;
+    }
 
     public List<QuestionDTO> getQuestionsInOrder(Byte grade, Byte tier) {
-        List<Question> questions = new ArrayList<>();
         final int TOTAL_QUESTIONS = 15;
         final int QUESTIONS_PER_DIFFICULTY = 5;
-
-        // 등급과 티어 범위 체크 및 조정을 위한 헬퍼 메소드
         Pageable pageable = PageRequest.of(0, QUESTIONS_PER_DIFFICULTY * 2);
 
         // 현재 등급/티어 문제
         List<Question> sameGradeQuestions = questionRepository.findSameGradeQuestions(grade, tier, pageable);
         Collections.shuffle(sameGradeQuestions);
-
-        // 브론즈 4티어는 현재 등급 문제를 더 많이 가져옴
         int currentLevelCount = (grade == 1 && tier == 4) ? 10 : QUESTIONS_PER_DIFFICULTY;
         sameGradeQuestions = new ArrayList<>(sameGradeQuestions.subList(0,
             Math.min(currentLevelCount, sameGradeQuestions.size())));
 
-        // 낮은 난이도 문제 선택
-        List<Question> lowerQuestions = new ArrayList<>();
+        // 높은/낮은 난이도 문제 가져오기
+        List<Question> higherQuestions = new ArrayList<>(getHigherLevelQuestions(grade, tier, pageable));
+        List<Question> lowerQuestions = new ArrayList<>(getLowerLevelQuestions(grade, tier, pageable));
 
-        // 브론즈 4가 아닌 경우에만 낮은 난이도 문제 가져오기
-        if (!(grade == 1 && tier == 4)) {
-            if (tier < 4) {
-                List<Question> lowerTierQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
-                    grade,
-                    (byte)(tier + 1),
-                    pageable
-                );
-                lowerQuestions.addAll(lowerTierQuestions);
-            }
-            if (grade > 1) {
-                List<Question> lowerGradeQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
-                    (byte)(grade - 1),
-                    (byte)1,
-                    pageable
-                );
-                lowerQuestions.addAll(lowerGradeQuestions);
-            }
-        }
+        Collections.shuffle(higherQuestions);
         Collections.shuffle(lowerQuestions);
+
+        // 문제 수 제한
+        higherQuestions = new ArrayList<>(higherQuestions.subList(0,
+            Math.min(QUESTIONS_PER_DIFFICULTY, higherQuestions.size())));
         lowerQuestions = new ArrayList<>(lowerQuestions.subList(0,
             Math.min(QUESTIONS_PER_DIFFICULTY, lowerQuestions.size())));
 
-        // 높은 난이도 문제 선택
-        List<Question> higherQuestions = new ArrayList<>();
-
-        // 브론즈 4의 경우 브론즈 3 문제만 가져오기
-        if (grade == 1 && tier == 4) {
-            List<Question> bronze3Questions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
-                (byte)1,
-                (byte)3,
-                pageable
-            );
-            higherQuestions.addAll(bronze3Questions);
-        } else {
-            if (tier > 1) {
-                List<Question> higherTierQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
-                    grade,
-                    (byte)(tier - 1),
-                    pageable
-                );
-                higherQuestions.addAll(higherTierQuestions);
-            }
-            if (grade < 6) {
-                List<Question> higherGradeQuestions = questionRepository.findByDiffGradeAndDiffTierWithChoices(
-                    (byte)(grade + 1),
-                    (byte)4,
-                    pageable
-                );
-                higherQuestions.addAll(higherGradeQuestions);
-            }
-        }
-        Collections.shuffle(higherQuestions);
-        higherQuestions = new ArrayList<>(higherQuestions.subList(0,
-            Math.min(QUESTIONS_PER_DIFFICULTY, higherQuestions.size())));
-
-        // 문제 배치
+        // 문제 배치 로직 (기존과 동일)
         List<Question> finalQuestions = new ArrayList<>();
 
         if (grade == 1 && tier == 4) {
@@ -171,7 +181,7 @@ public class QuestionService {
             addQuestions(finalQuestions, sameGradeQuestions, 1);    // 마무리
         }
 
-        // 부족한 문제는 현재 등급 문제로 채움
+        // 부족한 문제 채우기
         while (finalQuestions.size() < TOTAL_QUESTIONS && !sameGradeQuestions.isEmpty()) {
             finalQuestions.add(sameGradeQuestions.remove(0));
         }

@@ -1,6 +1,7 @@
 package com.linguagen.backend.repository;
 
 import com.linguagen.backend.dto.DailyPlayCountDto;
+import com.linguagen.backend.dto.IncorrectTypePercentageDto;
 import com.linguagen.backend.entity.StudentAnswer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,7 +35,13 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
     List<StudentAnswer> findByStudentIdAndCreatedAtBetween(String studentId, LocalDateTime startDate, LocalDateTime endDate);
 
 
-
+    // 틀린 세부 유형 비율 출력
+    @Query("SELECT new com.linguagen.backend.dto.IncorrectTypePercentageDto(sa.question.detailType, COUNT(sa)) " +
+            "FROM StudentAnswer sa " +
+            "WHERE sa.studentId = :studentId AND sa.isCorrect = false " +
+            "GROUP BY sa.question.detailType " +
+            "ORDER BY COUNT(sa) DESC")
+    List<IncorrectTypePercentageDto> findIncorrectDetailTypeCountsByStudentId(@Param("studentId") String studentId);
 
 }
 

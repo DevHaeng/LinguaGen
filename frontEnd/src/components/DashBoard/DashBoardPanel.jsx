@@ -90,6 +90,7 @@ const DashBoardPanel = () => {
     const [userTier, setUserTier] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [latestStudyInfo, setLatestStudyInfo] = useState(null); // 최신 학습 정보 상태 추가
+    const [mistakeTypes, setMistakeTypes] = useState([]); // 자주 틀린 유형 데이터 상태 추가
 
 
     useEffect(() => {
@@ -114,6 +115,11 @@ const DashBoardPanel = () => {
                     // 최신 학습 정보 가져오기
                     const studyLogResponse = await axios.get(`http://localhost:8085/api/study-log/latest/${userData.id}`, { withCredentials: true });
                     setLatestStudyInfo(studyLogResponse.data);
+
+                    // 자주 틀린 유형 데이터 가져오기
+                    const mistakeTypeResponse = await axios.get(`http://localhost:8085/api/study-log/incorrect-type-percentage/${userData.id}`, { withCredentials: true });
+                    setMistakeTypes(mistakeTypeResponse.data.slice(0, 6)); // 최대 6개만 설정
+
                 } catch (error) {
                     console.error('사용자 정보를 가져오는 중 오류 발생:', error);
                 }
@@ -199,27 +205,30 @@ const DashBoardPanel = () => {
                 <div className='grid grid-cols-3 gap-4 max-lg:grid-cols-1' style={{ height: '450px' }}>
                     <Card className='w-full h-full'>
                         <CardHeader className='p-4 pl-8 text-md font-bold border-b-2 border-gray-300'>
-                            <h2>자주 틀린 단어</h2>
+                            <h2>자주 틀린 유형</h2>
                         </CardHeader>
                         <CardContent className='mt-4'>
                             <ul>
-                                {MistakeWord.map((word) => (
-                                    <li key={word.id} className='flex flex-row items-center justify-between border-b-2 border-gray-300 mb-4 pb-4'>
-                                        <p className='font-bold hover:scale-125 transition-all duration-300 cursor-pointer' style={{ userSelect: 'none' }}>{word.word}</p>
-                                        <p className='text-sm text-gray-500' style={{ userSelect: 'none' }}>{word.percentage}</p>
-                                        <p style={{ userSelect: 'none' }}>{word.meaning}</p>
+                                {mistakeTypes.map((type, index) => (
+                                    <li key={index}
+                                        className='flex flex-row items-center justify-between border-b-2 border-gray-300 mb-4 pb-4'>
+                                        <p className='font-bold hover:scale-125 transition-all duration-300 cursor-pointer'
+                                           style={{userSelect: 'none'}}>{type.questionType}</p>
+                                        <p className='text-sm text-gray-500'
+                                           style={{userSelect: 'none'}}>{type.percentage}%</p>
+                                        <p style={{userSelect: 'none'}}>{type.incorrectCount}회</p>
                                     </li>
                                 ))}
                             </ul>
                         </CardContent>
                         <CardFooter className='flex flex-row justify-end'>
-                            <CardDescription style={{ cursor: 'pointer' }}>
+                            <CardDescription style={{cursor: 'pointer'}}>
                                 더보기 {'>'}
                             </CardDescription>
                         </CardFooter>
                     </Card>
-                    <CustomLineChart className='w-full h-full' />
-                    <CustomRadicalChart className='w-full h-full' />
+                    <CustomLineChart className='w-full h-full'/>
+                    <CustomRadicalChart className='w-full h-full'/>
                 </div>
             </div>
         </div>

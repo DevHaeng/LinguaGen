@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { Lock } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from "@/components/ui/button"
+import OptimizedImage from '../common/OptimizedImage';
 import {
   Pagination,
   PaginationContent,
@@ -216,7 +217,7 @@ const BadgePanel = () => {
           {currentBadges.map((badge, index) => (
             <div key={badge.id || index} className="flex flex-col items-center justify-center">
               <BadgeItem unlocked={badge.unlocked}>
-                <img
+                <OptimizedImage
                   src={badge.src || 'https://via.placeholder.com/60'}
                   alt={badge.title}
                   style={{ borderRadius: '50%', width: '60px', height: '60px'}}

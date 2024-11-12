@@ -4,6 +4,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Separator } from "@/components/ui/separator"
 import home from '../assets/imgs/home.png'
 import { Button } from "@/components/ui/button"
+import OptimizedImage from './common/OptimizedImage';
 import {
   Sheet,
   SheetContent,
@@ -56,7 +57,7 @@ const Header = () => {
           <div className='w-full flex items-center justify-between px-8'>
             {/* 왼쪽 로고 */}
             <div className='flex-1'>
-              <img
+              <OptimizedImage
                 src={home}
                 alt="MainLogo"
                 style={{ width: '35px', height: '35px', cursor: 'pointer' }}
@@ -121,7 +122,7 @@ const Header = () => {
                 <SheetTrigger className='p-0 m-0 bg-transparent'>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <img
+                      <OptimizedImage
                         src='src/assets/imgs/notification-bell.png'
                         alt="alarm"
                         className='w-[35px] h-[35px] cursor-pointer'

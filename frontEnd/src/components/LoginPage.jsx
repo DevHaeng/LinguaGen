@@ -9,6 +9,7 @@ import Overlay from './Overlay';
 import useStore from '../store/useStore';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Slider } from "@/components/ui/slider";
+import OptimizedImage from './common/OptimizedImage';
 import {
   Tooltip,
   TooltipContent,
@@ -536,7 +537,7 @@ function SignupNext({ formData, onPreviousSignup }) {
                 <TooltipProvider >
                   <Tooltip >
                     <TooltipTrigger className='bg-transparent'>
-                      <img src="src/assets/imgs/info.png" alt="이미지를 불러올 수 없습니다." className='w-8 h-8 mb-4' />
+                      <OptimizedImage src="src/assets/imgs/info.png" alt="이미지를 불러올 수 없습니다." className='w-8 h-8 mb-4' />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>일상적인 기초 영어 표현을 사용하고 이해할 수 있습니다.</p>
@@ -544,13 +545,13 @@ function SignupNext({ formData, onPreviousSignup }) {
                   </Tooltip>
                 </TooltipProvider>
                 <p>Bronze</p>
-                <img src="src/assets/imgs/down.png" alt="이미지를 불러올 수 없습니다" className='w-8 h-8 mt-4' />
+                <OptimizedImage src="src/assets/imgs/down.png" alt="이미지를 불러올 수 없습니다" className='w-8 h-8 mt-4' />
               </div>
               <div className='flex flex-col justify-center items-center'>
                 <TooltipProvider >
                   <Tooltip >
                     <TooltipTrigger className='bg-transparent'>
-                      <img src="src/assets/imgs/info.png" alt="이미지를 불러올 수 없습니다." className='w-8 h-8 mb-4' />
+                      <OptimizedImage src="src/assets/imgs/info.png" alt="이미지를 불러올 수 없습니다." className='w-8 h-8 mb-4' />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>기본적인 개인, 가족, 업무 관련 용어를 이해하고 사용할 수 있습니다.</p>

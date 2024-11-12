@@ -1,28 +1,30 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import PageLoader from './components/PageLoader.jsx';
 import LandingPage from './components/LandingPage.jsx';
-import LoginPage from './components/LoginPage.jsx';
-import MainPage from './components/MainPage.jsx';
-import DashBoard from './components/DashBoard/DashBoard.jsx';
-import MyPage from './components/MyPage/MyPage.jsx';
-import Community from './components/Community/Community.jsx';
-import DailyQuiz from './components/DailyQuiz.jsx';
-import User from './components/Test/User.jsx';
-import RankingPage from './components/RankingPage.jsx';
 import DungeonCanvas from './components/Game/DungeonCanvas.jsx';
 import MountainCanvas from './components/Game/MountainCanvas.jsx';
 import RuinsCanvas from './components/Game/RuinsCanvas.jsx';
-import Writing from './components/Community/Writing.jsx';
-import WelcomeMessage from './components/WelcomeMessage.jsx';
-import UpgradeBilling from './components/UpgradeBilling.jsx';
+import PageLoader from './components/PageLoader.jsx';
 
 import './styles/global.css';
 
+// Lazy 로딩 컴포넌트들
+const LoginPage = lazy(() => import('./components/LoginPage.jsx'));
+const MainPage = lazy(() => import('./components/MainPage.jsx'));
+const DashBoard = lazy(() => import('./components/DashBoard/DashBoard.jsx'));
+const MyPage = lazy(() => import('./components/MyPage/MyPage.jsx'));
+const Community = lazy(() => import('./components/Community/Community.jsx'));
+const DailyQuiz = lazy(() => import('./components/DailyQuiz.jsx'));
+const User = lazy(() => import('./components/Test/User.jsx'));
+const RankingPage = lazy(() => import('./components/RankingPage.jsx'));
+const Writing = lazy(() => import('./components/Community/Writing.jsx'));
+const WelcomeMessage = lazy(() => import('./components/WelcomeMessage.jsx'));
+const UpgradeBilling = lazy(() => import('./components/UpgradeBilling.jsx'));
 
 function App() {
   return (
     <Router>
+      <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -46,6 +48,7 @@ function App() {
           <Route path='/community/:board/writing' element={<Community />} />
           <Route path='/upgrade' element={<UpgradeBilling />} />
         </Routes>
+      </Suspense>
     </Router>
   );
 }

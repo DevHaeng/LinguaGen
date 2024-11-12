@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react'
 
+import OptimizedImage from '../common/OptimizedImage';
 import {
     Card,
     CardContent,
@@ -154,7 +155,7 @@ const DashBoardPanel = () => {
                                         <>
                                             <span>{latestStudyInfo.questionType} </span>
 
-                                            <img
+                                            <OptimizedImage
                                                 src={tierImages[latestStudyInfo.difficultyGrade]}
                                                 alt={`${gradeNames[latestStudyInfo.difficultyGrade]} 이미지`}
                                                 className='inline-block w-5 h-5 ml-2'
@@ -172,7 +173,7 @@ const DashBoardPanel = () => {
                                     - {userGradeString && userTier ? `${userGradeString} ${userTier}` : '로딩 중...'}</CardTitle>
                             </CardHeader>
                             <CardContent className='flex flex-row items-center py-2'>
-                                <img
+                                <OptimizedImage     
                                     src={userTier === 1 ? tierImages[userGrade + 1] : tierImages[userGrade]}
                                     alt='Tier img'
                                     className='w-16 h-16'

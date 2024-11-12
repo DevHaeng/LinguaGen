@@ -720,9 +720,10 @@ const MainContainer = ({ selectedGame }) => {
                           <SidebarMenu>
                             <SidebarMenuItem>
                               <SidebarMenuButton
-                                asChild
-                                isActive={selectedMenu === 'Create'}
-                                onClick={() => handleMenuClick('Create')}
+                                  asChild
+                                  isActive={selectedMenu === 'Create'}
+                                  onClick={() => handleMenuClick('Create')}
+                                  data-button-id="create-button" // 식별자 추가
                               >
                                 <a href="#">
                                   <BookCheck className="h-4 w-4 mr-2" />

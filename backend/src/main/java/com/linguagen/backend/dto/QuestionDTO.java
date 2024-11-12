@@ -29,6 +29,11 @@ public class QuestionDTO {
     @JsonIgnore
     private LocalDateTime createdAt;
 
+    // 추가할 필드
+    private String setId;
+    private Integer questionOrder;
+    private Integer totalQuestionsInSet; // 항상 15
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

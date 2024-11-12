@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion'; // framer-motion 라이브러리 사용
+import React, {useState, useCallback, useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {motion, AnimatePresence} from 'framer-motion';
 import axios from 'axios';
 import Lottie from 'react-lottie';
 import CorrectAnimation from '../../assets/LottieAnimation/Correct.json';
@@ -12,18 +12,36 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 
+axios.defaults.withCredentials = true;
+
+
+// axios 인스턴스 생성
+const api = axios.create({
+    baseURL: 'http://localhost:5173',
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
 const GameProgressPage = ({
                               onCorrectAnswer,
                               onWrongAnswer,
                               currentQuestion: currentQuestionNumber,
                               totalQuestions,
+                              customQuestions,
+                              isCustomSet,
+                              setId,
                               isGameOver,
-                              setIsGameOver,  // 추가
                               isGameClear,
-                              setIsGameClear,  // 추가
                               onRestart,
-                              onMainMenu }) => {
+                              onMainMenu,
+                              onNextQuestion, // 추가
+
+                          }) => {
     const navigate = useNavigate();
+    const userId = sessionStorage.getItem('id');
+
+    // State 선언들
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -38,30 +56,132 @@ const GameProgressPage = ({
     const [showAnimation, setShowAnimation] = useState(false);
     const [hoveredAnswer, setHoveredAnswer] = useState(null);
     const [sessionIdentifier, setSessionIdentifier] = useState(null);
-    // 추가할 state
     const [isTimeExpired, setIsTimeExpired] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(30 * 60); // 30분
+    const [timeLeft, setTimeLeft] = useState(30 * 60);
+    const [currentQuestion, setCurrentQuestion] = useState(null);
 
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 
-    // 추가할 useEffect
-    useEffect(() => {
-        let timer;
-        if (sessionIdentifier) {
-            timer = setInterval(() => {
-                setTimeLeft(prevTime => {
-                    if (prevTime <= 1) {
-                        handleTimeExpired();
-                        return 0;
-                    }
-                    return prevTime - 1;
-                });
-            }, 1000);
+    // Lottie 옵션 설정
+    const correctOptions = {
+        loop: false,
+        autoplay: true,
+        animationData: CorrectAnimation,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
         }
-        return () => clearInterval(timer);
-    }, [sessionIdentifier]);
+    };
 
-    // 추가할 함수
+    const incorrectOptions = {
+        loop: false,
+        autoplay: true,
+        animationData: IncorrectAnimation,
+        rendererSettings: {
+            preserveAspectRatio: 'xMidYMid slice'
+        }
+    };
+    // GameProgressPage.jsx의 submitAnswerToServer 함수 수정
+    const submitAnswerToServer = useCallback(async (submitData) => {
+        try {
+            if (!submitData.studentAnswer) {
+                console.error("No answer provided");
+                return;
+            }
+
+            // 나만의 문제인 경우와 일반 문제인 경우를 구분
+            let response;
+            if (isCustomSet) {
+                // 나만의 문제 답안 제출
+                response = await axios.post("http://localhost:8085/api/user-questions/submit-answer", {
+                    sessionIdentifier: sessionIdentifier, // 세션 식별자 추가
+                    questionIdx: submitData.questionId,
+                    answer: submitData.studentAnswer
+                }, {
+                    withCredentials: true
+                });
+            } else {
+                // 기존 일반 문제 답안 제출
+                response = await api.post("/api/answers/submit", {
+                    sessionIdentifier: sessionIdentifier,
+                    idx: submitData.questionId,
+                    studentId: userId,
+                    studentAnswer: submitData.studentAnswer,
+                    questionOrder: currentQuestionNumber,
+                    type: submitData.questionType
+                });
+            }
+
+            const result = response.data;
+            console.log("Server response:", result);
+
+            // `isCorrect` 값을 Boolean 타입으로 변환
+            const isCorrect = result.isCorrect === true || result.isCorrect === 'true';
+
+            if (isCorrect) {
+                onCorrectAnswer();
+            } else {
+                onWrongAnswer();
+            }
+
+            setFeedback(isCorrect);
+            setShowFeedback(true);
+            setShowAnimation(true);
+        } catch (error) {
+            console.error("Error submitting answer:", error);
+            if (error.response) {
+                console.error("Server error details:", error.response.data);
+            }
+        }
+    }, [sessionIdentifier, currentQuestionNumber, userId, onCorrectAnswer, onWrongAnswer, isCustomSet]);
+
+
+    // 답안 처리 함수
+    const handleAnswer = useCallback((answerIndex) => {
+        if (!currentQuestion) {
+            console.error("No current question available");
+            return;
+        }
+
+        // 이미 답을 제출한 상태라면 무시
+        if (showFeedback) {
+            return;
+        }
+
+        console.log("Handling answer:", {
+            answerIndex,
+            currentQuestion,
+            type: currentQuestion.type
+        });
+
+        let studentAnswer;
+
+        if (currentQuestion.type === 'multipleChoice') {
+            if (!currentQuestion.options || answerIndex >= currentQuestion.options.length) {
+                console.error("Invalid answer index for multiple choice question");
+                return;
+            }
+            studentAnswer = ['A', 'B', 'C', 'D'][answerIndex];
+        } else if (currentQuestion.type === 'shortAnswer') {
+            if (typeof answerIndex !== 'string') {
+                console.error("Invalid answer type for short answer question");
+                return;
+            }
+            studentAnswer = answerIndex.trim();
+        } else {
+            console.error("Unknown question type:", currentQuestion.type);
+            return;
+        }
+
+        setSelectedAnswer(answerIndex);
+
+        submitAnswerToServer({
+            questionId: currentQuestion.idx,
+            studentAnswer: studentAnswer,
+            questionType: currentQuestion.type
+        });
+    }, [currentQuestion, submitAnswerToServer, showFeedback]); // showFeedback 의존성 추가
+
+    // 시간 초과 처리
     const handleTimeExpired = async () => {
         try {
             await api.post(`/api/answers/session/${sessionIdentifier}/complete`);
@@ -86,246 +206,136 @@ const GameProgressPage = ({
         }
     };
 
-    // Lottie 옵션 설정
-    const correctOptions = {
-        loop: false,
-        autoplay: true,
-        animationData: CorrectAnimation,
-        rendererSettings: {
-            preserveAspectRatio: 'xMidYMid slice'
+    // 힌트 생성 함수
+    const generateHint = useCallback((answer) => {
+        if (!answer) return '';
+
+        if (answer.includes('BLANK:')) {
+            const [beforeBlank, rest] = answer.split('BLANK:');
+            const [blankWord, afterBlank] = rest.split(' ', 2);
+            return `${beforeBlank}${'_'.repeat(blankWord.length)}${afterBlank ? ' ' + afterBlank : ''}`;
         }
-    };
 
-    const incorrectOptions = {
-        loop: false,
-        autoplay: true,
-        animationData: IncorrectAnimation,
-        rendererSettings: {
-            preserveAspectRatio: 'xMidYMid slice'
-        }
-    };
+        const first = answer.slice(0, 1);
+        const last = answer.slice(-1);
+        const middle = '_'.repeat(answer.length - 2);
+        return `${first}${middle}${last}`;
+    }, []);
 
-    // axios 인스턴스 생성
-    const api = axios.create({
-        baseURL: 'http://localhost:5173',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+    // handleNextQuestion 함수 수정
+    const handleNextQuestion = useCallback(() => {
+        setIsSliding(true);
+        setSlideDirection('left');
 
-    // sessionStorage에서 사용자 ID 가져오기
-    const userId = sessionStorage.getItem('id');
+        setTimeout(() => {
+            if (currentQuestionIndex + 1 >= questions.length) {
+                api.post(`/api/answers/session/${sessionIdentifier}/complete`)
+                    .catch(error => console.error('Failed to complete session:', error));
+            } else {
+                onNextQuestion(); // 부모 컴포넌트의 현재 문제 번호 업데이트
+                setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+                setUserAnswer('');
+                setSelectedAnswer(null);
+                setShowFeedback(false);
+                setShowExplanation(false);
+            }
+            setSlideDirection('right');
+        }, 500);
 
-    // 문제 데이터 가져오기
-    // 세션 시작 및 문제 가져오기
+        setTimeout(() => {
+            setIsSliding(false);
+        }, 1000);
+    }, [currentQuestionIndex, questions.length, sessionIdentifier, onNextQuestion]);
+
+    // 문제 초기화 및 세션 설정
     useEffect(() => {
         const initializeGame = async () => {
             try {
                 setLoading(true);
                 if (!userId) throw new Error("User ID not found in sessionStorage.");
 
-                // 1. 활성 세션 확인
-                const sessionResponse = await api.get(`/api/answers/active-session/${userId}`);
-                let currentSessionId;
-
-                if (sessionResponse.data?.sessionIdentifier) {
-                    // 기존 진행 중인 세션이 있는 경우
-                    currentSessionId = sessionResponse.data.sessionIdentifier;
-                    // 세션 상태 확인
-                    const statusResponse = await api.get(`/api/answers/session/${currentSessionId}/status`);
-                    // 필요한 경우 상태 복원 로직 추가
-                } else {
-                    // 새 세션 시작
-                    const newSessionResponse = await api.post('/api/answers/start-session', { userId });
-                    currentSessionId = newSessionResponse.data.sessionIdentifier;
-                }
-
+                // 새로운 세션 항상 생성
+                const newSessionResponse = await api.post('/api/answers/start-session', { userId });
+                const currentSessionId = newSessionResponse.data.sessionIdentifier;
                 setSessionIdentifier(currentSessionId);
 
-                // 2. 문제 가져오기
-                const { data } = await api.get(`/api/questions/user/${userId}`);
-                console.log('Raw data:', data);
+                let questionsData;
 
-                const formattedQuestions = data.map(q => {
-                    if (q.questionFormat === 'MULTIPLE_CHOICE') {
-                        const correctIndex = q.choices.findIndex(
-                            choice => choice.choiceLabel === q.correctAnswer
-                        );
+                // 커스텀 세트 모드와 일반 모드 구분
+                if (isCustomSet && customQuestions && setId) {
+                    console.log("Using custom set mode with setId:", setId);
+                    const response = await api.get(`/api/user-questions/sets/${setId}`);
+                    questionsData = response.data.map(q => ({
+                        idx: q.idx,
+                        type: q.questionFormat === 'MULTIPLE_CHOICE' ? 'multipleChoice' : 'shortAnswer',
+                        question: q.question,
+                        passage: q.passage,
+                        explanation: q.explanation,
+                        detailType: q.detailType,
+                        interest: q.interest,
+                        diffGrade: q.diffGrade,
+                        diffTier: q.diffTier,
+                        correctAnswer: q.correctAnswer,
+                        options: q.choices?.map(choice => choice.choiceText) || []
+                    }));
+                    console.log("Formatted custom questions:", questionsData);
+                } else {
+                    console.log("Using default mode");
+                    const response = await api.get(`/api/questions/user/${userId}`);
+                    questionsData = response.data.map(q => ({
+                        idx: q.idx,
+                        type: q.questionFormat === 'MULTIPLE_CHOICE' ? 'multipleChoice' : 'shortAnswer',
+                        question: q.question,
+                        passage: q.passage,
+                        explanation: q.explanation,
+                        detailType: q.detailType,
+                        interest: q.interest,
+                        diffGrade: q.diffGrade,
+                        diffTier: q.diffTier,
+                        correctAnswer: q.correctAnswer,
+                        options: q.choices?.map(choice => choice.choiceText) || []
+                    }));
+                    console.log("Formatted default questions:", questionsData);
+                }
 
-                        return {
-                            idx: q.idx,
-                            type: 'multipleChoice',
-                            question: q.question,
-                            options: q.choices.map(choice => choice.choiceText),
-                            correctAnswer: correctIndex,
-                            passage: q.passage || null,
-                            explanation: q.explanation
-                        };
-                    } else if (q.questionFormat === 'SHORT_ANSWER') {
-                        const words = q.correctAnswer.split(' ');
-                        const keywordIndex = words.findIndex(word => 
-                            word.length > 3 && 
-                            !['what', 'when', 'where', 'why', 'how', 'the', 'and', 'that'].includes(word.toLowerCase())
-                        );
-                        
-                        const targetWord = words[keywordIndex];
-                        const beforeWord = words.slice(0, keywordIndex).join(' ');
-                        const afterWord = words.slice(keywordIndex + 1).join(' ');
-                        
-                        return {
-                            idx: q.idx,
-                            type: 'shortAnswer',
-                            question: q.question,
-                            correctAnswer: `${beforeWord} BLANK:${targetWord} ${afterWord}`,
-                            passage: q.passage || null,
-                            explanation: q.explanation
-                        };
-                    }
-                });
-
-                console.log('Formatted questions:', formattedQuestions);
-                setQuestions(formattedQuestions);
+                console.log("Final questions data:", questionsData);
+                setQuestions(questionsData);
+                setLoading(false);
             } catch (err) {
                 console.error('Initialization error:', err);
-                setError(err.response?.data?.message || err.message);
-            } finally {
+                setError(err.message || 'Failed to load questions');
                 setLoading(false);
             }
         };
 
         initializeGame();
-    }, []);
+    }, [userId, isCustomSet, customQuestions, setId]);
 
+    // 현재 문제 업데이트
     useEffect(() => {
-        const completeGame = async () => {
-            if (sessionIdentifier && (isGameOver || isGameClear)) {
-                try {
-                    await api.post(`/api/answers/session/${sessionIdentifier}/complete`);
-                } catch (error) {
-                    console.error('Failed to complete session:', error);
-                }
-            }
-        };
-
-        completeGame();
-    }, [isGameOver, isGameClear, sessionIdentifier]);
-
-    const currentQuestion = questions[currentQuestionIndex];
-
-    // generateHint 함수 수정
-    const generateHint = (answer) => {
-        if (!answer) return '';
-        
-        // 정답에 'BLANK:' 접두어가 있는지 확인
-        if (answer.includes('BLANK:')) {
-            // BLANK: 뒤의 단어를 추출하고 앞뒤 문장 분리
-            const [beforeBlank, rest] = answer.split('BLANK:');
-            const [blankWord, afterBlank] = rest.split(' ', 2);
-            
-            // 전체 문장 조합 (빈칸은 언더스코어로 대체)
-            return `${beforeBlank}${'_'.repeat(blankWord.length)}${afterBlank ? ' ' + afterBlank : ''}`;
+        if (questions.length > 0 && currentQuestionNumber > 0) {
+            setCurrentQuestion(questions[currentQuestionNumber - 1]);
         }
-        
-        // 기존의 한 단어 힌트 로직
-        const first = answer.slice(0, 1);
-        const last = answer.slice(-1);
-        const middle = '_'.repeat(answer.length - 2);
-        return `${first}${middle}${last}`;
-    };
+    }, [questions, currentQuestionNumber]);
 
-    // 답안 제출 시 정답 확인 로직 수정 (handleAnswer 함수 내부)
-    const handleAnswer = useCallback((answerIndex) => {
-        let isCorrect = false;
-        let answer;
-
-        if (currentQuestion.type === 'multipleChoice' && currentQuestion.options && currentQuestion.options.length > answerIndex) {
-            const optionsMap = ['a', 'b', 'c', 'd'];
-            answer = optionsMap[answerIndex];
-            isCorrect = answerIndex === currentQuestion.correctAnswer;
-        } else if (currentQuestion.type === 'shortAnswer') {
-            answer = answerIndex.trim();
-            
-            // BLANK: 형식의 정답인 경우
-            if (currentQuestion.correctAnswer.includes('BLANK:')) {
-                const correctBlankWord = currentQuestion.correctAnswer.split('BLANK:')[1].trim();
-                isCorrect = answer.toLowerCase() === correctBlankWord.toLowerCase();
-            } else {
-                // 기존의 전체 문장 비교 로직
-                isCorrect = answer.toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
-            }
-        } else {
-            console.error("Invalid question or choice index:", currentQuestion, answerIndex);
-            return;
+    // 타이머 관리
+    useEffect(() => {
+        let timer;
+        if (sessionIdentifier) {
+            timer = setInterval(() => {
+                setTimeLeft(prevTime => {
+                    if (prevTime <= 1) {
+                        handleTimeExpired();
+                        return 0;
+                    }
+                    return prevTime - 1;
+                });
+            }, 1000);
         }
+        return () => clearInterval(timer);
+    }, [sessionIdentifier]);
 
-        setSelectedAnswer(answerIndex);
-
-        // 서버에만 정답 여부 판단을 위임
-        submitAnswerToServer({
-            idx: currentQuestion.idx,
-            studentId: userId,
-            studentAnswer: answer
-        });
-
-    }, [currentQuestion, userId, sessionIdentifier, currentQuestionNumber]);
-
-    // 답안 제출 함수 수정
-    const submitAnswerToServer = async (submitData) => {
-        try {
-            if (!sessionIdentifier) {
-                console.error("No session identifier found");
-                return;
-            }
-
-            const response = await api.post("/api/answers/submit", {
-                sessionIdentifier: sessionIdentifier,
-                idx: submitData.idx,
-                studentId: submitData.studentId,
-                studentAnswer: submitData.studentAnswer,
-                questionOrder: currentQuestionNumber
-            });
-
-            const result = response.data;
-            console.log("Answer submission result:", result);
-
-            // 여기서만 정답 처리를 수행
-            if (result.isCorrect) {
-                onCorrectAnswer();
-            } else {
-                onWrongAnswer();
-            }
-
-            // UI 업데이트
-            setFeedback(result.isCorrect);
-            setShowFeedback(true);
-            setShowAnimation(true);
-
-            // 게임 종료 조건 체크
-            if (result.completed) {
-                if (result.correctCount > result.totalQuestions / 2) {
-                    setIsGameClear(true);
-                } else {
-                    setIsGameOver(true);
-                }
-            }
-
-        } catch (error) {
-            if (error.response?.status === 408) {
-                setIsTimeExpired(true);
-                setIsGameOver(true);
-                try {
-                    await api.post(`/api/answers/session/${sessionIdentifier}/complete`);
-                } catch (completeError) {
-                    console.error("Error completing expired session:", completeError);
-                }
-            } else {
-                console.error("Error submitting answer:", error);
-                setError("Failed to submit answer");
-            }
-        }
-    };
-
-    // 게임 종료 시 세션 정리
+    // 게임 종료 처리
     useEffect(() => {
         const completeSession = async () => {
             if (sessionIdentifier && (isGameOver || isGameClear)) {
@@ -340,31 +350,7 @@ const GameProgressPage = ({
         completeSession();
     }, [isGameOver, isGameClear, sessionIdentifier]);
 
-    // 다음 문제로 이동하는 함수
-    const handleNextQuestion = () => {
-        setIsSliding(true);
-        setSlideDirection('left');
-
-        setTimeout(() => {
-            // 마지막 문제인지 확인
-            if (currentQuestionIndex + 1 >= questions.length) {
-                api.post(`/api/answers/session/${sessionIdentifier}/complete`)
-                    .catch(error => console.error('Failed to complete session:', error));
-            }
-
-            setCurrentQuestionIndex(prevIndex => prevIndex + 1);
-            setUserAnswer('');
-            setSlideDirection('right');
-            setSelectedAnswer(null);
-            setShowFeedback(false);
-            setShowExplanation(false);
-        }, 500);
-
-        setTimeout(() => {
-            setIsSliding(false);
-        }, 1000);
-    };
-
+    // 문제 렌더링 함수
     const renderQuestion = () => {
         if (!currentQuestion) return null;
 
@@ -373,8 +359,8 @@ const GameProgressPage = ({
                 return (
                     <div className="flex h-full w-full">
                         {/* 왼쪽 패널: 지문과 문제 */}
-                        <div className="w-1/2 h-full border-r-2 border-gray-200 p-6 flex flex-col overflow-auto custom-scrollbar">
-                            {/* 지문이 있는 경우 */}
+                        <div
+                            className="w-1/2 h-full border-r-2 border-gray-200 p-6 flex flex-col overflow-auto custom-scrollbar">
                             {/* 문제 */}
                             <div className="bg-white p-4 rounded-lg shadow-sm flex flex-row justify-between">
                                 <h2 className="text-xl font-semibold text-gray-800">
@@ -393,6 +379,7 @@ const GameProgressPage = ({
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
+                            {/* Passage 섹션 */}
                             {currentQuestion.passage && (
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
                                     <h3 className="text-lg kanit-semibold mb-2 text-gray-700">Passage</h3>
@@ -404,18 +391,14 @@ const GameProgressPage = ({
                                                 const content = line.replace(/^[AB]:/, '').trim();
 
                                                 return (
-                                                    <div key={index} className={`flex items-start gap-2 ${speaker === 'B' ? 'flex-row-reverse' : ''}`}>
-                                                        {/* 화자 아바타 */}
-                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'
-                                                            }`}>
+                                                    <div key={index}
+                                                         className={`flex items-start gap-2 ${speaker === 'B' ? 'flex-row-reverse' : ''}`}>
+                                                        <div
+                                                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'}`}>
                                                             <span className="text-white font-bold">{speaker}</span>
                                                         </div>
-
-                                                        {/* 대화 내용 */}
-                                                        <div className={`max-w-[75%] p-3 rounded-lg ${speaker === 'A'
-                                                                ? 'bg-white shadow-sm rounded-tl-none border border-gray-100'
-                                                                : 'bg-white shadow-sm rounded-tr-none border border-gray-100'
-                                                            }`}>
+                                                        <div
+                                                            className={`max-w-[75%] p-3 rounded-lg ${speaker === 'A' ? 'bg-white shadow-sm rounded-tl-none border border-gray-100' : 'bg-white shadow-sm rounded-tr-none border border-gray-100'}`}>
                                                             <p className="kanit-regular text-lg leading-relaxed">
                                                                 {content}
                                                             </p>
@@ -432,7 +415,6 @@ const GameProgressPage = ({
                                     )}
                                 </div>
                             )}
-
                         </div>
 
                         {/* 오른쪽 패널: 선택지들 */}
@@ -444,16 +426,16 @@ const GameProgressPage = ({
                                         onClick={() => !showFeedback && handleAnswer(index)}
                                         onMouseEnter={() => showFeedback && selectedAnswer === index && setHoveredAnswer(index)}
                                         onMouseLeave={() => setHoveredAnswer(null)}
-                                        className={`relative rounded-lg shadow-md transition-all duration-300 hover:shadow-lg flex flex-col ${showFeedback && selectedAnswer !== index ? 'cursor-not-allowed opacity-50' : ''
-                                            }`}
+                                        className={`relative rounded-lg shadow-md transition-all duration-300 hover:shadow-lg flex flex-col ${showFeedback && selectedAnswer !== index ? 'cursor-not-allowed opacity-50' : ''}`}
                                         style={{
                                             backgroundColor: colors[index],
                                             minHeight: '120px',
                                             height: 'auto'
                                         }}
-                                        whileHover={!showFeedback || selectedAnswer === index ? { scale: 1.02 } : {}}
-                                        whileTap={!showFeedback || selectedAnswer === index ? { scale: 0.98 } : {}}
+                                        whileHover={!showFeedback || selectedAnswer === index ? {scale: 1.02} : {}}
+                                        whileTap={!showFeedback || selectedAnswer === index ? {scale: 0.98} : {}}
                                     >
+
                                         <div className="w-full h-full flex flex-col items-center justify-start p-4">
                                             <span className="text-2xl font-bold mb-2 text-white shrink-0">
                                                 {['A', 'B', 'C', 'D'][index]}
@@ -466,17 +448,18 @@ const GameProgressPage = ({
                                         <AnimatePresence>
                                             {showFeedback && selectedAnswer === index && (
                                                 <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
+                                                    initial={{opacity: 0}}
+                                                    animate={{opacity: 1}}
+                                                    exit={{opacity: 0}}
                                                     className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center"
                                                     onMouseEnter={() => setHoveredAnswer(index)}
                                                     onMouseLeave={() => setHoveredAnswer(null)}
                                                 >
                                                     {showAnimation && (
-                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div
+                                                            className="absolute inset-0 flex items-center justify-center">
                                                             <Lottie
-                                                                options={feedback ? correctOptions : incorrectOptions}
+                                                                options={feedback === true ? correctOptions : incorrectOptions}
                                                                 height={200}
                                                                 width={200}
                                                                 isClickToPauseDisabled={true}
@@ -486,9 +469,9 @@ const GameProgressPage = ({
 
                                                     {hoveredAnswer === index && (
                                                         <motion.div
-                                                            initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: 10 }}
+                                                            initial={{opacity: 0, y: 10}}
+                                                            animate={{opacity: 1, y: 0}}
+                                                            exit={{opacity: 0, y: 10}}
                                                             className="absolute bottom-4 flex gap-4 z-50"
                                                         >
                                                             <button
@@ -498,7 +481,7 @@ const GameProgressPage = ({
                                                                 }}
                                                                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                                                             >
-                                                                해설 기
+                                                                해설 보기
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -520,13 +503,16 @@ const GameProgressPage = ({
                         </div>
                     </div>
                 );
+
             case 'shortAnswer':
                 return (
                     <div className="flex h-full w-full">
                         {/* 왼쪽 패널: 지문과 문제 */}
-                        <div className="w-1/2 h-full border-r-2 border-gray-200 p-6 flex flex-col overflow-auto custom-scrollbar">
+                        <div
+                            className="w-1/2 h-full border-r-2 border-gray-200 p-6 flex flex-col overflow-auto custom-scrollbar">
                             {/* 문제 */}
-                            <div className="bg-white p-4 rounded-lg shadow-sm flex flex-row justify-between items-center">
+                            <div
+                                className="bg-white p-4 rounded-lg shadow-sm flex flex-row justify-between items-center">
                                 <h2 className="text-xl font-semibold text-gray-800">
                                     {currentQuestion.question}
                                 </h2>
@@ -543,6 +529,8 @@ const GameProgressPage = ({
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
+
+                            {/* Passage 섹션 */}
                             {currentQuestion.passage && (
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
                                     <h3 className="text-lg kanit-semibold mb-2 text-gray-700">Passage</h3>
@@ -555,17 +543,10 @@ const GameProgressPage = ({
 
                                                 return (
                                                     <div key={index} className={`flex items-start gap-2 ${speaker === 'B' ? 'flex-row-reverse' : ''}`}>
-                                                        {/* 화자 아바타 */}
-                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'
-                                                            }`}>
+                                                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${speaker === 'A' ? 'bg-blue-500' : 'bg-green-500'}`}>
                                                             <span className="text-white font-bold">{speaker}</span>
                                                         </div>
-
-                                                        {/* 대화 내용 */}
-                                                        <div className={`max-w-[75%] p-3 rounded-lg ${speaker === 'A'
-                                                                ? 'bg-white shadow-sm rounded-tl-none border border-gray-100'
-                                                                : 'bg-white shadow-sm rounded-tr-none border border-gray-100'
-                                                            }`}>
+                                                        <div className={`max-w-[75%] p-3 rounded-lg ${speaker === 'A' ? 'bg-white shadow-sm rounded-tl-none border border-gray-100' : 'bg-white shadow-sm rounded-tr-none border border-gray-100'}`}>
                                                             <p className="kanit-regular text-lg leading-relaxed">
                                                                 {content}
                                                             </p>
@@ -640,7 +621,6 @@ const GameProgressPage = ({
                                                     </div>
                                                 )}
 
-                                                {/* 호버 시 나타나는 버튼들 */}
                                                 {hoveredAnswer && (
                                                     <motion.div
                                                         initial={{ opacity: 0, y: 10 }}
@@ -681,6 +661,7 @@ const GameProgressPage = ({
         }
     };
 
+    // 로딩 상태 표시
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -689,6 +670,7 @@ const GameProgressPage = ({
         );
     }
 
+    // 에러 상태 표시
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
@@ -703,6 +685,7 @@ const GameProgressPage = ({
         );
     }
 
+    // 게임 오버 상태 표시
     if (isGameOver) {
         return (
             <motion.div
@@ -729,7 +712,7 @@ const GameProgressPage = ({
         );
     }
 
-
+    // 게임 클리어 상태 표시
     if (isGameClear) {
         return (
             <motion.div
@@ -756,6 +739,7 @@ const GameProgressPage = ({
         );
     }
 
+    // 기본 렌더링
     return (
         <div className="h-full w-full overflow-visible bg-gray-50 relative">
             <motion.div
@@ -801,7 +785,7 @@ const GameProgressPage = ({
                                 </div>
                                 <div className="text-lg text-gray-600 leading-relaxed">
                                     <p className="whitespace-pre-line break-words">
-                                        {currentQuestion.explanation}
+                                        {currentQuestion?.explanation}
                                     </p>
                                 </div>
                             </motion.div>

@@ -1,18 +1,19 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import RuinsImage from '@/assets/CanvasImage/Ruins.png';
 import HP_Full from '@/assets/CanvasImage/HP_Full.png';
 import HP_Empty from '@/assets/CanvasImage/HP_Empty.png';
 import SoundOn from '@/assets/CanvasImage/sound_on.png';
 import SoundOff from '@/assets/CanvasImage/sound_off.png';
 import GameProgressPage from '@/components/Game/GameProgressPage.jsx';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+
 // 스프라이트 이미지를 동적으로 임포트하고 정렬하는 함수
 const importAll = (r) => {
   return Object.values(r)
-    .map(module => ({ path: module.default, number: parseInt(module.default.match(/\d+/)[0]) }))
-    .sort((a, b) => a.number - b.number)
-    .map(item => item.path);
+      .map(module => ({ path: module.default, number: parseInt(module.default.match(/\d+/)[0]) }))
+      .sort((a, b) => a.number - b.number)
+      .map(item => item.path);
 };
 
 // 각 애니메이션 타입별로 스프라이트 이미지 임포트
@@ -40,7 +41,6 @@ const RuinsCanvas = () => {
   const [knightHP, setKnightHP] = useState(5);
   const fontLoadedRef = useRef(false);
   const [currentQuestion, setCurrentQuestion] = useState(1);
-  const totalQuestions = 10;
   const [isExitHovered, setIsExitHovered] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isGameClear, setIsGameClear] = useState(false);
@@ -53,14 +53,29 @@ const RuinsCanvas = () => {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const navigate = useNavigate();
 
+  const location = useLocation();
 
-  // 이미지 로드 함수 추가
+  // useState 초기화를 함수형으로 변경
+  const [totalQuestions] = useState(() => {
+    return location?.state?.isCustomSet ? 15 : 10;
+  });
+
+// 이미지 로드 함수 수정
   const loadImages = useCallback((sprites) => {
+    if (!Array.isArray(sprites) || sprites.length === 0) {
+      console.warn('Invalid sprites array');
+      return [];
+    }
+
     return sprites.map(path => {
+      if (!path) {
+        console.warn('Invalid sprite path');
+        return null;
+      }
       const img = new Image();
       img.src = path;
       return img;
-    });
+    }).filter(Boolean); // null 이미지 제거
   }, []);
 
   // 이미지 캐싱
@@ -85,14 +100,14 @@ const RuinsCanvas = () => {
   const drawHealthBar = useCallback((ctx, x, y, hp, isPlayer = true) => {
     const maxHP = isPlayer ? 5 : 10;
     const spacing = 32;
-    
+
     for (let i = 0; i < maxHP; i++) {
-        const image = i < hp ? hpFullImage.current : hpEmptyImage.current;
-        if (image && image.complete) {
-            ctx.drawImage(image, x + (i * spacing), y, 30, 30);
-        }
+      const image = i < hp ? hpFullImage.current : hpEmptyImage.current;
+      if (image && image.complete) {
+        ctx.drawImage(image, x + (i * spacing), y, 30, 30);
+      }
     }
-}, []);
+  }, []);
 
   const animate = useCallback((time) => {
     const frameSpeed = 100; // 프레임 속도 (ms)
@@ -167,33 +182,40 @@ const RuinsCanvas = () => {
       const bossWidth = (bossImage.width + 100) * bossScale;
       const bossHeight = bossImage.height * bossScale;
       ctx.drawImage(
-        bossImage,
-        canvas.width / 2.5, // 보스를 오른쪽으로 이동
-        canvas.height - bossHeight,
-        bossWidth,
-        bossHeight
+          bossImage,
+          canvas.width / 2.5, // 보스를 오른쪽으로 이동
+          canvas.height - bossHeight,
+          bossWidth,
+          bossHeight
       );
     }
 
     // 기사 스프라이트 그리기
+    // knightImages 객체 수정
     const knightImages = {
       idle: knightIdleImages.current,
       attack: knightAttackImages.current,
-      takeHit: knightTakeHitImages.current,
+      takeHit: knightTakeHitImages.current, // 오타 수정: knightTakeHitSprites -> knightTakeHitImages
       death: knightDeathImages.current,
       spAttack: knightSpAttackImages.current
     }[knightState];
+
+// null check 추가
+    if (!knightImages || !knightImages[knightFrameIndex]) {
+      return; // 이미지가 로드되지 않았으면 그리기 건너뛰기
+    }
+
     const knightImage = knightImages[knightFrameIndex];
     if (knightImage && knightImage.complete) {
       const knightScale = 2; // 기사 크기 증가
       const knightWidth = (knightImage.width + 100) * knightScale;
       const knightHeight = knightImage.height * knightScale;
       ctx.drawImage(
-        knightImage,
-        canvas.width / 1.5 - knightWidth - 90, // 기사를 왼쪽으로 이동
-        canvas.height - knightHeight,
-        knightWidth,
-        knightHeight
+          knightImage,
+          canvas.width / 1.5 - knightWidth - 90, // 기사를 왼쪽으로 이동
+          canvas.height - knightHeight,
+          knightWidth,
+          knightHeight
       );
     }
 
@@ -232,17 +254,18 @@ const RuinsCanvas = () => {
         ctx.fillStyle = `rgba(0, 255, 0, ${gameClearOpacity})`;
         ctx.fillText('Game Clear', canvas.width / 2, canvas.height / 1.7);
       }
+
       const soundImage = isSoundOn ? soundOnImage.current : soundOffImage.current;
       if (soundImage && soundImage.complete) {
         const iconSize = 30; // 아이콘 크기
         const iconX = canvas.width / 30 - iconSize / 2;
         const iconY = 115;
-        
+
         // 마우스 호버 효과
         if (isSoundHovered) {
           ctx.globalAlpha = 0.7;
         }
-        
+
         // 사운드 아이콘 그리기
         ctx.drawImage(soundImage, iconX, iconY, iconSize, iconSize);
         ctx.globalAlpha = 1.0;
@@ -250,7 +273,7 @@ const RuinsCanvas = () => {
     }
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [bossState, bossFrameIndex, knightState, knightFrameIndex, bossHP, knightHP, drawHealthBar, currentQuestion, isExitHovered, isGameOver, gameOverOpacity, isGameClear, gameClearOpacity,isSoundOn,isSoundHovered]);
+  }, [bossState, bossFrameIndex, knightState, knightFrameIndex, bossHP, knightHP, drawHealthBar, currentQuestion, totalQuestions, isExitHovered, isGameOver, gameOverOpacity, isGameClear, gameClearOpacity, isSoundOn, isSoundHovered]);
 
   const handleMouseMove = useCallback((event) => {
     const canvas = canvasRef.current;
@@ -263,7 +286,7 @@ const RuinsCanvas = () => {
     const exitY = 85;
     const exitWidth = 40;
     const exitHeight = 30;
-    
+
     // Sound 아이콘 영역
     const iconSize = 30;
     const soundX = canvas.width / 30 - iconSize / 2;
@@ -271,18 +294,18 @@ const RuinsCanvas = () => {
 
     // Exit 영역 체크 (텍스트 주변 영역을 약간 아래로)
     setIsExitHovered(
-      x >= exitX - exitWidth/2 && 
-      x <= exitX + exitWidth/2 && 
-      y >= exitY - exitHeight/2 + 30 &&
-      y <= exitY + exitHeight/2 + 30
+        x >= exitX - exitWidth / 2 &&
+        x <= exitX + exitWidth / 2 &&
+        y >= exitY - exitHeight / 2 + 30 &&
+        y <= exitY + exitHeight / 2 + 30
     );
-    
+
     // Sound 아이콘 영역 체크 (영역을 약간 아래로)
     setIsSoundHovered(
-      x >= soundX && 
-      x <= soundX + iconSize && 
-      y >= soundY + 75 &&
-      y <= soundY + iconSize + 75
+        x >= soundX &&
+        x <= soundX + iconSize &&
+        y >= soundY + 75 &&
+        y <= soundY + iconSize + 75
     );
   }, []);
 
@@ -291,7 +314,7 @@ const RuinsCanvas = () => {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    
+
     const exitX = canvas.width / 30;
     const exitY = 85;
     const exitWidth = 40;
@@ -299,10 +322,10 @@ const RuinsCanvas = () => {
 
     // Exit 영역 클릭 감지
     if (
-      x >= exitX - exitWidth/2 && 
-      x <= exitX + exitWidth/2 && 
-      y >= exitY - exitHeight/2 + 30 &&
-      y <= exitY + exitHeight/2 + 30
+        x >= exitX - exitWidth / 2 &&
+        x <= exitX + exitWidth / 2 &&
+        y >= exitY - exitHeight / 2 + 30 &&
+        y <= exitY + exitHeight / 2 + 30
     ) {
       setShowExitDialog(true);
     }
@@ -320,10 +343,10 @@ const RuinsCanvas = () => {
     const soundY = 115;
 
     if (
-      x >= soundX && 
-      x <= soundX + iconSize && 
-      y >= soundY + 75 &&
-      y <= soundY + iconSize + 75
+        x >= soundX &&
+        x <= soundX + iconSize &&
+        y >= soundY + 75 &&
+        y <= soundY + iconSize + 75
     ) {
       setIsSoundOn(prev => !prev);
     }
@@ -393,6 +416,7 @@ const RuinsCanvas = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // 핸들러 함수들 정의 및 메모이제이션
   const handleBossAttack = useCallback(() => {
     if (bossState === 'idle' && knightHP > 0) {
       setBossState('attack');
@@ -406,7 +430,6 @@ const RuinsCanvas = () => {
             setKnightState('death');
             setKnightFrameIndex(0);
             setIsGameOver(true);
-            console.log('Game Over set to true'); // 디버깅용 로그 추가
           }
           return newHP;
         });
@@ -431,7 +454,7 @@ const RuinsCanvas = () => {
             setTimeout(() => {
               setBossState('death');
               setBossFrameIndex(0);
-              setIsGameClear(true);  // 보스가 죽으면 Game Clear
+              setIsGameClear(true);
             }, 1000);
           }
           return newHP;
@@ -446,13 +469,42 @@ const RuinsCanvas = () => {
 
   const handleCorrectAnswer = useCallback(() => {
     handleKnightAttack();
-    incrementQuestion();
-  }, [handleKnightAttack, incrementQuestion]);
+    // incrementQuestion() 제거
+  }, [handleKnightAttack]);
 
   const handleWrongAnswer = useCallback(() => {
     handleBossAttack();
-    incrementQuestion();
-  }, [handleBossAttack, incrementQuestion]);
+    // incrementQuestion() 제거
+  }, [handleBossAttack]);
+
+// onNextQuestion 함수 추가
+  const handleNextQuestion = useCallback(() => {
+    setCurrentQuestion(prev => Math.min(prev + 1, totalQuestions));
+  }, [totalQuestions]);
+
+// gameProps에 onNextQuestion 추가
+  const gameProps = useMemo(() => ({
+    onCorrectAnswer: handleCorrectAnswer,
+    onWrongAnswer: handleWrongAnswer,
+    currentQuestion,
+    totalQuestions,
+    customQuestions: location?.state?.questions,
+    isCustomSet: !!location?.state?.setId,
+    setId: location?.state?.setId,
+    isGameOver,
+    isGameClear,
+    onNextQuestion: handleNextQuestion, // 추가
+  }), [
+    handleCorrectAnswer,
+    handleWrongAnswer,
+    currentQuestion,
+    totalQuestions,
+    location?.state?.questions,
+    location?.state?.setId,
+    isGameOver,
+    isGameClear,
+    handleNextQuestion, // 추가
+  ]);
 
   const handleRestart = useCallback(() => {
     setIsGameOver(false);
@@ -467,72 +519,62 @@ const RuinsCanvas = () => {
   }, []);
 
   const handleMainMenu = useCallback(() => {
-    // 메인 메뉴로 이동하는 로직
-    // 예: 라우터를 사용한다면 history.push('/main') 등
-    console.log('메인 메뉴로 이동');
-  }, []);
+    navigate('/main');
+  }, [navigate]);
 
   return (
-    <>
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        opacity: opacity,
-        transition: 'opacity 1s ease-in',
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', width: '100%', height: '60vh' }}>
-        <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
-      </div>
-      <div style={{ height: '40vh' }}>
-        {!isGameOver && !isGameClear && (
-          <GameProgressPage
-            onCorrectAnswer={handleCorrectAnswer}
-            onWrongAnswer={handleWrongAnswer}
-            currentQuestion={currentQuestion}
-            totalQuestions={totalQuestions}
-          />
-        )}
-        {(isGameOver || isGameClear) && (
-          <GameProgressPage
-            isGameOver={isGameOver}
-            isGameClear={isGameClear}
-            onRestart={handleRestart}
-            onMainMenu={handleMainMenu}
-          />
-        )}
-      </div>
-    </div>
-    {/* Exit 다이얼로그 */}
-      {showExitDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-xl p-6 shadow-2xl max-w-sm w-full mx-4"
-          >
-            <h3 className="text-xl font-bold text-center mb-4">
-              메인 메뉴로 돌아가시겠습니까?
-            </h3>
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={() => navigate('/main')}
-                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => setShowExitDialog(false)}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                No
-              </button>
-            </div>
-          </motion.div>
+      <>
+        <div style={{
+          width: '100%',
+          height: '100%',
+          opacity: opacity,
+          transition: 'opacity 1s ease-in',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', width: '100%', height: '60vh' }}>
+            <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+          </div>
+          <div style={{ height: '40vh' }}>
+            {!isGameOver && !isGameClear && (
+                <GameProgressPage {...gameProps} />
+            )}
+            {(isGameOver || isGameClear) && (
+                <GameProgressPage
+                    {...gameProps}
+                    onRestart={handleRestart}
+                    onMainMenu={handleMainMenu}
+                />
+            )}
+          </div>
         </div>
-      )}
-    </>
+        {/* Exit 다이얼로그 */}
+        {showExitDialog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="bg-white rounded-xl p-6 shadow-2xl max-w-sm w-full mx-4"
+              >
+                <h3 className="text-xl font-bold text-center mb-4">
+                  메인 메뉴로 돌아가시겠습니까?
+                </h3>
+                <div className="flex justify-center space-x-4">
+                  <button
+                      onClick={() => navigate('/main')}
+                      className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    Yes
+                  </button>
+                  <button
+                      onClick={() => setShowExitDialog(false)}
+                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    No
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+        )}
+      </>
   );
 };
 

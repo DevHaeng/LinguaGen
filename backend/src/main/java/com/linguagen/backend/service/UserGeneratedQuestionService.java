@@ -1,14 +1,14 @@
 package com.linguagen.backend.service;
 
-import com.linguagen.backend.dto.OpenAIPromptDTO;
-import com.linguagen.backend.dto.QuestionGenerationRequestDTO;
-import com.linguagen.backend.dto.UserGeneratedQuestionDTO;
+import com.linguagen.backend.dto.*;
 import com.linguagen.backend.entity.*;
 import com.linguagen.backend.enums.QuestionType;
 import com.linguagen.backend.exception.QuestionParsingException;
 import com.linguagen.backend.exception.ResourceNotFoundException;
+import com.linguagen.backend.repository.UserGeneratedQuestionAnswerRepository;
 import com.linguagen.backend.repository.UserGeneratedQuestionRepository;
 import com.linguagen.backend.repository.UserRepository;
+import com.linguagen.backend.util.SessionUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,6 +30,206 @@ public class UserGeneratedQuestionService {
     private final UserGeneratedQuestionRepository userGeneratedQuestionRepository;
     private final UserRepository userRepository;
     private final OpenAIService openAIService;
+    private final UserGeneratedQuestionAnswerRepository answerRepository;
+
+    @Transactional
+    public AnswerResponse submitAnswer(String userId, Long questionIdx, String answer, String sessionIdentifier) {
+        // 로그 추가
+        log.debug("User ID: {}", userId);
+        log.debug("Question IDX: {}", questionIdx);
+        log.debug("Session Identifier: {}", sessionIdentifier);
+
+        UserGeneratedQuestion question = userGeneratedQuestionRepository.findById(questionIdx)
+            .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
+
+        Question.QuestionFormat questionType = question.getQuestionFormat(); // 반환 타입에 맞게 변수 선언
+
+        boolean isCorrect = false;
+
+        if (questionType == Question.QuestionFormat.MULTIPLE_CHOICE) {
+            isCorrect = gradeMultipleChoice(answer, question.getCorrectAnswer());
+        } else {
+            isCorrect = gradeSubjective(answer, question.getCorrectAnswer());
+        }
+
+        UserGeneratedQuestionAnswer userAnswer = new UserGeneratedQuestionAnswer();
+        userAnswer.setUserId(userId);
+        userAnswer.setQuestionIdx(questionIdx);
+        userAnswer.setAnswer(answer);
+        userAnswer.setIsCorrect(isCorrect);
+        userAnswer.setSessionIdentifier(sessionIdentifier); // 세션 식별자 설정
+
+
+        answerRepository.save(userAnswer);
+
+        return new AnswerResponse(
+            isCorrect,
+            isCorrect ? "정답입니다!" :
+                String.format("오답입니다. 정답은 '%s' 입니다.", question.getCorrectAnswer())
+        );
+
+
+    }
+
+
+    // 특수 문자 변환 함수
+    private String replaceSpecialCharacters(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replaceAll("[éèêë]", "e")
+            .replaceAll("[íìîï]", "i")
+            .replaceAll("[áàâä]", "a")
+            .replaceAll("[óòôö]", "o")
+            .replaceAll("[úùûü]", "u")
+            .replaceAll("[ñ]", "n")
+            .replaceAll("[ý]", "y");
+    }
+
+    // 답안 전처리 함수
+    private String preprocessAnswer(String input) {
+        if (input == null) {
+            return null;
+        }
+        // 특수 문자 변환
+        input = replaceSpecialCharacters(input);
+        // 따옴표 제거 및 공백 제거
+        input = input.replaceAll("[\"'`]", "").trim();
+        return input;
+    }
+
+    // 객관식 채점 함수
+    private boolean gradeMultipleChoice(String studentAnswer, String correctAnswer) {
+        // 학생 답안과 정답 전처리
+        String studentAns = preprocessAnswer(studentAnswer);
+        String correctAns = preprocessAnswer(correctAnswer);
+
+        // 첫 번째 A-D 문자 추출
+        String studentChoice = extractChoiceLetter(studentAns);
+        String correctChoice = extractChoiceLetter(correctAns);
+
+        return studentChoice.equalsIgnoreCase(correctChoice);
+    }
+
+    private String extractChoiceLetter(String input) {
+        if (input == null) {
+            return "";
+        }
+        Matcher matcher = Pattern.compile("[A-D]").matcher(input.toUpperCase());
+        return matcher.find() ? matcher.group() : input.toUpperCase();
+    }
+
+    // 주관식 채점 함수
+    private boolean gradeSubjective(String studentAnswer, String correctAnswer) {
+        // 학생 답안과 정답 전처리
+        String studentAns = preprocessAnswer(studentAnswer);
+        String correctAns = preprocessAnswer(correctAnswer);
+
+        // 정답 파싱
+        AnswerParts correctParts = parseAnswer(correctAns);
+        // 학생 답안 파싱
+        AnswerParts studentParts = parseAnswer(studentAns);
+
+        // 비교 로직
+        if (correctParts == null || studentParts == null) {
+            return false;
+        }
+
+        // 경우의 수에 따른 비교
+        boolean isCorrect = false;
+
+        // 1. 영어 답안 비교
+        if (correctParts.eng != null && correctParts.eng.equalsIgnoreCase(studentAns)) {
+            isCorrect = true;
+        }
+        // 2. 한글 답안 비교
+        else if (correctParts.kor != null && correctParts.kor.equals(studentAns)) {
+            isCorrect = true;
+        }
+        // 3. 복합 답안 비교
+        else if (studentParts.eng != null && studentParts.kor != null) {
+            if ((correctParts.eng != null && correctParts.eng.equalsIgnoreCase(studentParts.eng) &&
+                correctParts.kor != null && correctParts.kor.equals(studentParts.kor)) ||
+                (correctParts.eng != null && correctParts.eng.equalsIgnoreCase(studentParts.kor) &&
+                    correctParts.kor != null && correctParts.kor.equals(studentParts.eng))) {
+                isCorrect = true;
+            }
+        }
+        // 4. 전체 문자열 비교
+        else if (correctAns.equalsIgnoreCase(studentAns)) {
+            isCorrect = true;
+        }
+
+        return isCorrect;
+    }
+
+    private AnswerParts parseAnswer(String answer) {
+        if (answer == null) {
+            return null;
+        }
+        String eng = null;
+        String kor = null;
+
+        if (answer.contains("(")) {
+            String[] parts = answer.split("\\(");
+            String firstPart = parts[0].trim();
+            String secondPart = parts[1].replace(")", "").trim();
+
+            if (isKorean(firstPart)) {
+                kor = firstPart;
+                eng = secondPart;
+            } else {
+                eng = firstPart;
+                kor = secondPart;
+            }
+        } else {
+            if (isKorean(answer)) {
+                kor = answer;
+            } else {
+                eng = answer;
+            }
+        }
+        return new AnswerParts(eng, kor);
+    }
+
+    private boolean isKorean(String text) {
+        return text.matches(".*[가-힣]+.*");
+    }
+
+    private static class AnswerParts {
+        String eng;
+        String kor;
+
+        AnswerParts(String eng, String kor) {
+            this.eng = eng;
+            this.kor = kor;
+        }
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<AnswerResponse> getAnswerHistory(String userId, String setId) {
+        List<UserGeneratedQuestion> questions = userGeneratedQuestionRepository.findBySetId(setId);
+        List<Long> questionIds = questions.stream()
+            .map(UserGeneratedQuestion::getIdx)
+            .collect(Collectors.toList());
+
+        List<UserGeneratedQuestionAnswer> answers =
+            answerRepository.findByUserIdAndQuestionIdxIn(userId, questionIds);
+
+        return answers.stream()
+            .map(answer -> new AnswerResponse(
+                answer.getIsCorrect(),
+                answer.getIsCorrect() ? "정답입니다!" :
+                    String.format("오답입니다. 정답은 '%s' 입니다.",
+                        questions.stream()
+                            .filter(q -> q.getIdx().equals(answer.getQuestionIdx()))
+                            .findFirst()
+                            .map(UserGeneratedQuestion::getCorrectAnswer)
+                            .orElse("")))
+            )
+            .collect(Collectors.toList());
+    }
 
     // CEFR 레벨 매핑 초기화
     private static final Map<String, String> TIER_TO_CEFR = Map.ofEntries(
@@ -60,58 +257,222 @@ public class UserGeneratedQuestionService {
     );
 
     @Transactional
-    public void generateQuestion(QuestionGenerationRequestDTO request, String userId) {
-        log.debug("Starting question generation for request: {} by user: {}", request, userId);
-
+    public String generateQuestion(QuestionGenerationRequestDTO request, String userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        String setId = UUID.randomUUID().toString();
         String tierString = request.getGrade().equals("챌린저")
             ? "챌린저"
             : String.format("%s %d티어", request.getGrade(), request.getTier());
 
         List<UserGeneratedQuestion> generatedQuestions = new ArrayList<>();
-        List<Exception> errors = new ArrayList<>();
 
-        for (int i = 0; i < request.getCount(); i++) {
+        // 항상 15문제 생성
+        for (int i = 0; i < 15; i++) {
             try {
-                String questionFormat = QuestionType.isWritingSpeakingType(request.getDetailType()) ?
-                    "short-answer" : determineQuestionFormat(request.getQuestionType(), request.getDetailType());
-
-                OpenAIPromptDTO prompt = createPrompt(
-                    request.getTopic(),
-                    tierString,
-                    request.getQuestionType(),
-                    request.getDetailType(),
-                    questionFormat
+                UserGeneratedQuestion question = generateSingleQuestion(
+                    request, user, setId, i + 1, tierString
                 );
-
-                String response = openAIService.getCompletion(prompt.getPrompt());
-
-                UserGeneratedQuestion question = new UserGeneratedQuestion();
-                question.setUserId(user);
-                setQuestionProperties(question, prompt, response, tierString);
-
-                UserGeneratedQuestion savedQuestion = userGeneratedQuestionRepository.save(question);
-                generatedQuestions.add(savedQuestion);
-
-                log.info("Generated question {} of {}, ID: {}", (i + 1), request.getCount(), savedQuestion.getIdx());
-
+                generatedQuestions.add(question);
             } catch (Exception e) {
-                log.error("Error generating question {} of {}", (i + 1), request.getCount(), e);
-                errors.add(e);
+                log.error("Error generating question {} of 15", i + 1, e);
+                if (i == 0) {
+                    throw new QuestionParsingException("Failed to generate first question");
+                }
             }
         }
 
-        // 결과 요약 로깅
-        log.info("Question generation completed. Successful: {}, Failed: {}",
-            generatedQuestions.size(), errors.size());
-
-        // 모든 문제 생성이 실패한 경우
-        if (generatedQuestions.isEmpty() && !errors.isEmpty()) {
-            throw new QuestionParsingException("Failed to generate any questions. First error: " +
-                errors.get(0).getMessage());
+        if (generatedQuestions.isEmpty()) {
+            throw new QuestionParsingException("Failed to generate any questions");
         }
+
+        return setId;
+    }
+
+    // generateSingleQuestion 메서드 추가
+    private UserGeneratedQuestion generateSingleQuestion(
+        QuestionGenerationRequestDTO request,
+        User user,
+        String setId,
+        int order,
+        String tierString
+    ) {
+        String questionFormat = QuestionType.isWritingSpeakingType(request.getDetailType())
+            ? "short-answer"
+            : determineQuestionFormat(request.getQuestionType(), request.getDetailType());
+
+        OpenAIPromptDTO prompt = createPrompt(
+            request.getTopic(),
+            tierString,
+            request.getQuestionType(),
+            request.getDetailType(),
+            questionFormat
+        );
+
+        String response = openAIService.getCompletion(prompt.getPrompt());
+
+        UserGeneratedQuestion question = new UserGeneratedQuestion();
+        question.setUserId(user);
+        question.setSetId(setId);
+        question.setQuestionOrder(order);
+
+        setQuestionProperties(question, prompt, response, tierString);
+
+        return userGeneratedQuestionRepository.save(question);
+    }
+
+    // createQuestionSetDTO 메서드 추가
+    private QuestionSetDTO createQuestionSetDTO(String setId, List<UserGeneratedQuestion> questions) {
+        if (questions.isEmpty()) {
+            return null;
+        }
+
+        UserGeneratedQuestion firstQuestion = questions.get(0);
+        return new QuestionSetDTO(
+            setId,
+            firstQuestion.getInterest(),
+            convertGradeToString(firstQuestion.getDiffGrade()),
+            firstQuestion.getDiffTier().intValue(),
+            firstQuestion.getType(),
+            firstQuestion.getDetailType(),
+            firstQuestion.getCreatedAt(),
+            questions.size()
+        );
+    }
+
+    // convertGradeToString 메서드 추가
+    private String convertGradeToString(Byte grade) {
+        return switch (grade) {
+            case 1 -> "브론즈";
+            case 2 -> "실버";
+            case 3 -> "골드";
+            case 4 -> "플래티넘";
+            case 5 -> "다이아몬드";
+            case 6 -> "챌린저";
+            default -> throw new IllegalArgumentException("Invalid grade: " + grade);
+        };
+    }
+
+    // getQuestionSets 메서드 수정 (Comparator 타입 문제 해결)
+    @Transactional(readOnly = true)
+    public List<QuestionSetDTO> getQuestionSets(String userId) {
+        List<UserGeneratedQuestion> questions = userGeneratedQuestionRepository.findByUserIdWithChoices(userId);
+
+        // null이나 빈 setId를 가진 질문들 필터링
+        List<UserGeneratedQuestion> validQuestions = questions.stream()
+            .filter(q -> q.getSetId() != null && !q.getSetId().isEmpty())
+            .collect(Collectors.toList());
+
+        // 세트별로 그룹화
+        Map<String, List<UserGeneratedQuestion>> questionsBySet = validQuestions.stream()
+            .collect(Collectors.groupingBy(UserGeneratedQuestion::getSetId));
+
+        return questionsBySet.entrySet().stream()
+            .map(entry -> {
+                List<UserGeneratedQuestion> setQuestions = entry.getValue();
+                if (setQuestions.isEmpty()) {
+                    return null;
+                }
+
+                UserGeneratedQuestion firstQuestion = setQuestions.get(0);
+                return new QuestionSetDTO(
+                    entry.getKey(),
+                    firstQuestion.getInterest(),
+                    convertGradeToString(firstQuestion.getDiffGrade()),
+                    firstQuestion.getDiffTier().intValue(),
+                    firstQuestion.getType(),
+                    firstQuestion.getDetailType(),
+                    firstQuestion.getCreatedAt(),
+                    setQuestions.size()
+                );
+            })
+            .filter(Objects::nonNull)
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void selectQuestionSet(String userId, String setId) {
+        // 해당 세트가 사용자의 것인지 확인
+        List<UserGeneratedQuestion> questions = userGeneratedQuestionRepository
+            .findBySetIdAndUserId(setId, userId);
+
+        if (questions.isEmpty()) {
+            throw new ResourceNotFoundException("Question set not found or unauthorized");
+        }
+
+        // 현재 선택된 세트가 있다면 선택 해제
+        deselectQuestionSet(userId);
+
+        // 세션에 현재 선택된 세트 ID 저장
+        SessionUtil.setCurrentQuestionSetId(setId);
+    }
+
+    @Transactional
+    public void deselectQuestionSet(String userId) {
+        SessionUtil.clearCurrentQuestionSetId();
+    }
+
+    @Transactional(readOnly = true)
+    public QuestionSetDTO getSelectedQuestionSet(String userId) {
+        String selectedSetId = SessionUtil.getCurrentQuestionSetId();
+        if (selectedSetId == null) {
+            return null;
+        }
+
+        List<UserGeneratedQuestion> questions = userGeneratedQuestionRepository
+            .findBySetIdAndUserId(selectedSetId, userId);
+
+        if (questions.isEmpty()) {
+            return null;
+        }
+
+        UserGeneratedQuestion firstQuestion = questions.get(0);
+        return createQuestionSetDTO(selectedSetId, questions);
+    }
+
+
+    public List<UserGeneratedQuestionDTO> getQuestionsBySetId(String setId) {
+        List<UserGeneratedQuestion> questions = userGeneratedQuestionRepository.findBySetId(setId);
+        return questions.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+
+    public List<QuestionDTO> getQuestionsBySetIdAsQuestionDTO(String setId) {
+        List<UserGeneratedQuestion> questions = userGeneratedQuestionRepository.findBySetId(setId);
+        return questions.stream()
+            .map(this::convertToQuestionDTO)
+            .collect(Collectors.toList());
+    }
+
+    private QuestionDTO convertToQuestionDTO(UserGeneratedQuestion question) {
+        QuestionDTO dto = new QuestionDTO();
+        dto.setIdx(question.getIdx());
+        dto.setType(question.getType());
+        dto.setDetailType(question.getDetailType());
+        dto.setInterest(question.getInterest());
+        dto.setDiffGrade(question.getDiffGrade());
+        dto.setDiffTier(question.getDiffTier());
+        dto.setQuestionFormat(question.getQuestionFormat());
+        dto.setPassage(question.getPassage());
+        dto.setQuestion(question.getQuestion());
+        dto.setCorrectAnswer(question.getCorrectAnswer());
+        dto.setExplanation(question.getExplanation());
+
+        if (question.getChoices() != null) {
+            List<QuestionDTO.ChoicesDTO> choiceDTOs = question.getChoices().stream()
+                .map(choice -> new QuestionDTO.ChoicesDTO(
+                    choice.getIdx(),
+                    choice.getChoiceLabel(),
+                    choice.getChoiceText()
+                ))
+                .collect(Collectors.toList());
+            dto.setChoices(choiceDTOs);
+        }
+
+        return dto;
     }
 
     private void setQuestionProperties(UserGeneratedQuestion question, OpenAIPromptDTO prompt,
@@ -142,6 +503,7 @@ public class UserGeneratedQuestionService {
         TierInfo tierInfo = parseTier(tier);
         question.setDiffGrade(tierInfo.getGrade());
         question.setDiffTier(tierInfo.getTier());
+
 
         // 정규식 패턴으로 콘텐츠 추출
         extractContent(response, question);
@@ -307,6 +669,8 @@ public class UserGeneratedQuestionService {
         dto.setCorrectAnswer(question.getCorrectAnswer());
         dto.setExplanation(question.getExplanation());
         dto.setCreatedAt(question.getCreatedAt());
+        dto.setSetId(question.getSetId()); // setId 설정
+
 
         if (question.getChoices() != null) {
             List<UserGeneratedQuestionDTO.ChoiceDTO> choiceDTOs = question.getChoices().stream()

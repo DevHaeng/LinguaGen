@@ -6,6 +6,7 @@ import com.linguagen.backend.entity.PointLog;
 import com.linguagen.backend.entity.User;
 import com.linguagen.backend.repository.PointLogRepository;
 import com.linguagen.backend.repository.UserRepository;
+import com.linguagen.backend.util.SessionUtil;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -64,24 +65,28 @@ public class UserService {
     }
 
     // User 객체를 사용하여 로그인 처리
-    public Optional<User> login(User user, HttpSession session) {
+    public Optional<User> login(User user) {
         // DB에서 사용자를 조회
         Optional<User> optionalUser = userRepository.findByIdAndPassword(user.getId(), user.getPassword());
 
         // 로그인 성공 시 세션에 사용자 정보 저장
         if (optionalUser.isPresent()) {
             User loggedInUser = optionalUser.get();
-            session.setAttribute("id", loggedInUser.getId());
-            session.setAttribute("nickname", loggedInUser.getNickname());
-            session.setAttribute("tell", loggedInUser.getTell());
-            session.setAttribute("address", loggedInUser.getAddress());
-            session.setAttribute("points", loggedInUser.getPoints());
-            session.setAttribute("plan", loggedInUser.getPlan());
-            session.setAttribute("fatigue", loggedInUser.getFatigue());
+
+            // 세션에 사용자 정보 저장
+            SessionUtil.setCurrentUserId(loggedInUser.getId());
+            SessionUtil.setAttribute("nickname", loggedInUser.getNickname());
+            SessionUtil.setAttribute("tell", loggedInUser.getTell());
+            SessionUtil.setAttribute("address", loggedInUser.getAddress());
+            SessionUtil.setAttribute("points", loggedInUser.getPoints());
+            SessionUtil.setAttribute("plan", loggedInUser.getPlan());
+            SessionUtil.setAttribute("fatigue", loggedInUser.getFatigue());
         }
 
         return optionalUser;
     }
+
+
 
     // 비번 변경
     @Transactional

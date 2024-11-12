@@ -20,6 +20,10 @@ import axios from "axios";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import styled from 'styled-components';
 
+
+// Axios 기본 설정 변경
+axios.defaults.withCredentials = true;
+
 // 에러 메시지 스타일 컴포넌트 추가
 const ErrorMessage = styled.p`
   color: #ef4444;

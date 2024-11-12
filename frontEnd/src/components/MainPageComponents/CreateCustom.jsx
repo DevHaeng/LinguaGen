@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { CustomAlertDialog } from "@/components/popup";
 import Spinner from "@/components/spinner";
 
@@ -18,7 +18,6 @@ const CreateCustom = () => {
     tier: '',
     questionType: '',
     detailType: '',
-    count: '1',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [availableDetailTypes, setAvailableDetailTypes] = useState([]);
@@ -73,19 +72,10 @@ const CreateCustom = () => {
     ]
   };
 
-  const counts = [
-    { value: "1", label: "1문제" },
-    { value: "5", label: "5문제" },
-    { value: "10", label: "10문제" },
-    { value: "15", label: "15문제" }
-
-  ];
-
   const handleFormChange = useCallback((field, value) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
 
-      // 등급이 변경되었을 때
       if (field === 'grade') {
         if (value === '챌린저') {
           newData.tier = '0';
@@ -94,7 +84,6 @@ const CreateCustom = () => {
         }
       }
 
-      // 문제 유형이 변경되었을 때
       if (field === 'questionType') {
         setAvailableDetailTypes(detailTypesByQuestionType[value] || []);
         newData.detailType = '';
@@ -114,15 +103,15 @@ const CreateCustom = () => {
 
   const handleSubmit = async () => {
     const requiredFields = formData.grade === '챌린저'
-      ? ['topic', 'grade', 'questionType', 'detailType', 'count']
-      : ['topic', 'grade', 'tier', 'questionType', 'detailType', 'count'];
+        ? ['topic', 'grade', 'questionType', 'detailType']
+        : ['topic', 'grade', 'tier', 'questionType', 'detailType'];
 
     const missingFields = requiredFields.filter(field => !formData[field]);
 
     if (missingFields.length > 0) {
       showAlert(
-        "입력 오류",
-        "모든 필드를 입력해주세요."
+          "입력 오류",
+          "모든 필드를 입력해주세요."
       );
       return;
     }
@@ -142,7 +131,7 @@ const CreateCustom = () => {
           tier: formData.grade === '챌린저' ? 0 : parseInt(formData.tier),
           questionType: formData.questionType,
           detailType: formData.detailType,
-          count: parseInt(formData.count)
+          count: 15 // 고정된 문제 수
         })
       });
 
@@ -154,14 +143,14 @@ const CreateCustom = () => {
       const data = await response.json();
       console.log('생성된 질문:', data);
       showAlert(
-        "성공",
-        "질문이 성공적으로 생성되었습니다!"
+          "성공",
+          "문제 세트가 성공적으로 생성되었습니다!"
       );
     } catch (error) {
       console.error('에러:', error);
       showAlert(
-        "오류 발생",
-        `질문 생성 중 오류가 발생했습니다: ${error.message}`
+          "오류 발생",
+          `문제 생성 중 오류가 발생했습니다: ${error.message}`
       );
     } finally {
       setIsLoading(false);
@@ -171,18 +160,17 @@ const CreateCustom = () => {
   return (
       <div className="p-6 max-w-2xl mx-auto space-y-6">
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold">Create Custom Question</h2>
-          <p className="text-gray-500">문제 생성을 위한 정보를 입력해주세요.</p>
+          <h2 className="text-2xl font-bold">Create Custom Question Set</h2>
+          <p className="text-gray-500">15문제로 구성된 문제 세트를 생성합니다.</p>
         </div>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">관심사</label>
-            <Textarea
+            <Input
                 placeholder="관심사를 입력해주세요..."
                 value={formData.topic}
                 onChange={(e) => handleFormChange('topic', e.target.value)}
-                className="min-h-[100px]"
             />
           </div>
 
@@ -206,46 +194,27 @@ const CreateCustom = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">문제 수</label>
-              <Select
-                  value={formData.count}
-                  onValueChange={(value) => handleFormChange('count', value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="문제 수 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {counts.map(count => (
-                      <SelectItem key={count.value} value={count.value}>
-                        {count.label}
-                      </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {formData.grade && formData.grade !== '챌린저' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">티어</label>
+                  <Select
+                      value={formData.tier}
+                      onValueChange={(value) => handleFormChange('tier', value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="티어 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiers.map(tier => (
+                          <SelectItem key={tier.value} value={tier.value}>
+                            {tier.label}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+            )}
           </div>
-
-          {formData.grade && formData.grade !== '챌린저' && (
-              <div>
-                <label className="block text-sm font-medium mb-2">티어</label>
-                <Select
-                    value={formData.tier}
-                    onValueChange={(value) => handleFormChange('tier', value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="티어 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tiers.map(tier => (
-                        <SelectItem key={tier.value} value={tier.value}>
-                          {tier.label}
-                        </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium mb-2">문제 유형</label>
@@ -293,21 +262,21 @@ const CreateCustom = () => {
               disabled={isLoading}
           >
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <Spinner />
-                <span>생성 중...</span>
-              </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Spinner />
+                  <span>생성 중...</span>
+                </div>
             ) : (
-              "문제 생성하기"
+                "문제 세트 생성하기"
             )}
           </Button>
         </div>
 
         <CustomAlertDialog
-          isOpen={alertDialog.isOpen}
-          onClose={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
-          title={alertDialog.title}
-          description={alertDialog.description}
+            isOpen={alertDialog.isOpen}
+            onClose={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+            title={alertDialog.title}
+            description={alertDialog.description}
         />
       </div>
   );

@@ -27,6 +27,11 @@ public class UserGeneratedQuestionDTO {
     private List<ChoiceDTO> choices;
     private LocalDateTime createdAt;
 
+    private String setId;
+    private Integer questionOrder;
+    private Integer totalQuestionsInSet;  // 세트 내 총 문제 수
+
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

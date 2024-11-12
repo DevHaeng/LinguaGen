@@ -7,6 +7,7 @@ import com.linguagen.backend.entity.User;
 import com.linguagen.backend.service.GradeTestService;
 import com.linguagen.backend.service.UserInterestService;
 import com.linguagen.backend.service.UserService;
+import com.linguagen.backend.util.SessionUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -111,9 +112,9 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user, HttpSession session) {
+    public ResponseEntity<?> login(@RequestBody User user) {
         try {
-            Optional<User> authenticatedUser = userService.login(user, session);
+            Optional<User> authenticatedUser = userService.login(user);
             if (authenticatedUser.isPresent()) {
                 return ResponseEntity.ok("로그인 성공");
             } else {
@@ -125,6 +126,8 @@ public class UserController {
                 .body("로그인 처리 중 오류가 발생했습니다.");
         }
     }
+
+
 
     // 로그아웃 요청 처리
     @PostMapping("/logout")

@@ -20,7 +20,6 @@ public class QuestionGenerationRequestDTO {
     @NotBlank(message = "등급을 선택해주세요")
     private String grade;
 
-    // tier를 Optional로 변경
     private Integer tier;
 
     @NotBlank(message = "문제유형을 선택해주세요")
@@ -29,8 +28,8 @@ public class QuestionGenerationRequestDTO {
     @NotBlank(message = "세부유형을 선택해주세요")
     private String detailType;
 
-    @NotNull(message = "생성할 문제 수를 입력해주세요")
-    @Min(value = 1, message = "최소 1개 이상의 문제를 생성해야 합니다")
-    @Max(value = 10, message = "한 번에 최대 10개까지 생성할 수 있습니다")
-    private Integer count;
+    // count 필드 제거 (항상 15문제로 고정)
+
+    private String setId; // 새로 추가된 필드
+
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -16,117 +16,134 @@ import DungeonCanvas from '../Game/DungeonCanvas';
 import RuinsCanvas from '../Game/RuinsCanvas';
 import MountainCanvas from '../Game/MountainCanvas';
 import useStore from '../../store/useStore';
+import { CustomAlertDialog } from "@/components/popup";
 
 const ListCustom = () => {
-  const { increaseFatigue, fatigue } = useStore();
-  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const {
+    increaseFatigue,
+    fatigue,
+    setCurrentQuestions,
+    setSelectedQuestionSet: storeSetSelectedQuestionSet,
+    resetGameProgress,
+    resetGame
+  } = useStore();
+  const [selectedQuestionSet, setSelectedQuestionSet] = useState(null);
   const [showAnimation, setShowAnimation] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [animationPosition, setAnimationPosition] = useState({ x: 0, y: 0 });
   const [showFatiguePopup, setShowFatiguePopup] = useState(false);
+  const [alertDialog, setAlertDialog] = useState({
+    isOpen: false,
+    title: "",
+    description: ""
+  });
   const navigate = useNavigate();
   const playerRef = useRef(null);
   const [canvasValue, setCanvasValue] = useState(null);
-
-  // canvases 배열 추가
+  const [questionSets, setQuestionSets] = useState([]);
   const canvases = [DungeonCanvas, RuinsCanvas, MountainCanvas];
 
-  // 더미 데이터 확장
-  const customQuestions = [
-    {
-      id: 1,
-      theme: 'Grammar',
-      title: 'Past Perfect Tense Practice',
-      date: '2024-03-20',
-      difficulty: 'Medium',
-      questionCount: 5,
-      questions: Array.from({ length: 5 }, (_, i) => i + 1)
-    },
-    {
-      id: 2,
-      theme: 'Vocabulary',
-      title: 'Business Terms Quiz',
-      date: '2024-03-19',
-      difficulty: 'Hard',
-      questionCount: 10,
-      questions: Array.from({ length: 10 }, (_, i) => i + 6)
-    },
-    {
-      id: 3,
-      theme: 'Reading',
-      title: 'Academic Reading Comprehension',
-      date: '2024-03-18',
-      difficulty: 'Advanced',
-      questionCount: 15,
-      questions: Array.from({ length: 15 }, (_, i) => i + 16)
-    },
-    {
-      id: 4,
-      theme: 'Listening',
-      title: 'TOEIC Listening Practice',
-      date: '2024-03-17',
-      difficulty: 'Hard',
-      questionCount: 5,
-      questions: Array.from({ length: 5 }, (_, i) => i + 31)
-    },
-    {
-      id: 5,
-      theme: 'Speaking',
-      title: 'Business Presentation Skills',
-      date: '2024-03-16',
-      difficulty: 'Advanced',
-      questionCount: 10,
-      questions: Array.from({ length: 10 }, (_, i) => i + 36)
-    },
-    {
-      id: 6,
-      theme: 'Writing',
-      title: 'Essay Writing Practice',
-      date: '2024-03-15',
-      difficulty: 'Medium',
-      questionCount: 5,
-      questions: Array.from({ length: 5 }, (_, i) => i + 46)
-    },
-    {
-      id: 7,
-      theme: 'Grammar',
-      title: 'Conditional Sentences',
-      date: '2024-03-14',
-      difficulty: 'Hard',
-      questionCount: 15,
-      questions: Array.from({ length: 15 }, (_, i) => i + 51)
-    },
-    {
-      id: 8,
-      theme: 'Vocabulary',
-      title: 'Academic Word List',
-      date: '2024-03-13',
-      difficulty: 'Advanced',
-      questionCount: 10,
-      questions: Array.from({ length: 10 }, (_, i) => i + 66)
+
+
+// getTierColor 함수 수정
+  const getTierColor = (grade) => {
+    switch (grade) {
+      case '브론즈':
+        return 'bg-[#B87333]/10 text-[#B87333] hover:bg-[#B87333]/20 border-[#B87333]'; // 청동색
+      case '실버':
+        return 'bg-[#C0C0C0]/10 text-[#808080] hover:bg-[#C0C0C0]/20 border-[#C0C0C0]'; // 은색
+      case '골드':
+        return 'bg-[#FFD700]/10 text-[#DAA520] hover:bg-[#FFD700]/20 border-[#FFD700]'; // 금색
+      case '플래티넘':
+        return 'bg-[#E5E4E2]/10 text-[#7B9095] hover:bg-[#E5E4E2]/20 border-[#E5E4E2]'; // 백금색
+      case '다이아몬드':
+        return 'bg-[#B9F2FF]/10 text-[#00A2E8] hover:bg-[#B9F2FF]/20 border-[#B9F2FF]'; // 다이아몬드 블루
+      case '챌린저':
+        return 'bg-gradient-to-r from-purple-500/10 to-red-500/10 text-red-500 hover:from-purple-500/20 hover:to-red-500/20 border-red-500'; // 그라데이션
+      default:
+        return 'bg-gray-100';
     }
-  ];
+  };
 
-  const handleQuestionSelect = (question) => {
-    setSelectedQuestions(prev => {
-      // 이미 선택된 문제 세트인 경우 제거
-      if (prev.some(id => question.questions.includes(id))) {
-        return prev.filter(id => !question.questions.includes(id));
+  // API에서 문제 세트 불러오기
+  useEffect(() => {
+    const fetchQuestionSets = async () => {
+      try {
+        const response = await fetch('http://localhost:8085/api/user-questions/sets', {
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to fetch question sets');
+        const data = await response.json();
+        setQuestionSets(data);
+      } catch (error) {
+        console.error('Error fetching question sets:', error);
+        showAlert(
+            "데이터 로딩 실패",
+            "문제 세트를 불러오는데 실패했습니다."
+        );
       }
+    };
 
-      // 새로운 문제 세트를 추가할 때 15개 제한 확인
-      const newQuestions = [...prev, ...question.questions];
-      if (newQuestions.length <= 15) {
-        return newQuestions;
-      }
-      return prev;
+    fetchQuestionSets();
+  }, []);
+
+  const showAlert = (title, description) => {
+    setAlertDialog({
+      isOpen: true,
+      title,
+      description
     });
   };
 
+  // handleQuestionSetSelect 수정
+  const handleQuestionSetSelect = async (set) => {
+    if (selectedQuestionSet?.id === set.id) {
+      setSelectedQuestionSet(null);
+      storeSetSelectedQuestionSet(null);  // store 상태 업데이트
+      try {
+        await fetch('http://localhost:8085/api/user-questions/deselect-set', {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } catch (error) {
+        console.error('Error deselecting question set:', error);
+      }
+    } else {
+      setSelectedQuestionSet(set);
+      storeSetSelectedQuestionSet(set);  // store 상태 업데이트
+      try {
+        const response = await fetch('http://localhost:8085/api/user-questions/select-set', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ setId: set.id })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to select question set');
+        }
+      } catch (error) {
+        console.error('Error selecting question set:', error);
+        showAlert(
+            "선택 실패",
+            "문제 세트 선택에 실패했습니다."
+        );
+      }
+    }
+  };
+
   const handleButtonClick = (e) => {
-    // 15개 미만 선택시 게임 시작 불가
-    if (selectedQuestions.length < 15) return;
-    
+    // 문제 세트가 선택되지 않은 경우
+    if (!selectedQuestionSet) {
+      showAlert(
+          "문제 세트 필요",
+          "게임을 시작하기 전에 문제 세트를 선택해주세요."
+      );
+      return;
+    }
+
     // 피로도가 100%일 때
     if (fatigue >= 100) {
       setShowFatiguePopup(true);
@@ -147,131 +164,191 @@ const ListCustom = () => {
     setTimeout(() => {
       setShowAnimation(false);
       setIsExiting(true);
-      
+
       setTimeout(() => {
         handleStartGame();
       }, 500);
     }, 1000);
   };
 
+  // handleStartGame 수정
   const handleStartGame = useCallback(async () => {
+    if (!selectedQuestionSet) return;
+
     try {
-      // 피로도 5 증가
+      // 문제 세트 가져오기
+      const response = await fetch(`http://localhost:8085/api/user-questions/sets/${selectedQuestionSet.id}`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+
+      const questions = await response.json();
+      console.log("Fetched questions:", questions);
+
+      // 게임 상태 초기화
+      resetGame();
+      resetGameProgress();
+
+      // 피로도 증가
       increaseFatigue(5);
 
+      // 랜덤 캔버스 선택
       const randomCanvas = canvases[Math.floor(Math.random() * canvases.length)];
       setCanvasValue(randomCanvas);
 
-      // 상태 초기화
-      setShowAnimation(false);
-      setIsExiting(false);
-      setAnimationPosition({ x: 0, y: 0 });
-
+      // 로딩 화면으로 이동
       navigate('/loading');
 
+      // 게임 화면으로 이동
       const timer = setTimeout(() => {
         if (randomCanvas === DungeonCanvas) {
-          navigate('/dungeon');
+          navigate('/dungeon', {
+            state: {
+              setId: selectedQuestionSet.id,
+              questions: questions,
+              isCustomSet: true  // 커스텀 세트임을 표시
+            }
+          });
         } else if (randomCanvas === MountainCanvas) {
-          navigate('/mountain');
+          navigate('/mountain', {
+            state: {
+              setId: selectedQuestionSet.id,
+              questions: questions,
+              isCustomSet: true
+            }
+          });
         } else if (randomCanvas === RuinsCanvas) {
-          navigate('/ruins');
+          navigate('/ruins', {
+            state: {
+              setId: selectedQuestionSet.id,
+              questions: questions,
+              isCustomSet: true
+            }
+          });
         }
       }, 3000);
 
       return () => clearTimeout(timer);
     } catch (error) {
       console.error('Error starting game:', error);
+      showAlert(
+          "오류 발생",
+          "게임 시작 중 오류가 발생했습니다."
+      );
     }
-  }, [navigate, increaseFatigue]);
+  }, [navigate, increaseFatigue, selectedQuestionSet, resetGame, resetGameProgress]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  };
 
   return (
-    <div className="p-6 space-y-6 h-screen flex flex-col overflow-hidden">
-      <div className="space-y-2 flex flex-row justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">My Custom Questions</h2>
-          <p className="text-gray-500">View and manage your custom-generated questions.</p>
-          <p className="text-sm text-gray-400">
-            {selectedQuestions.length}/15 문제 선택됨
-          </p>
-        </div>
-        <div className="mr-8">
-          <Button
-            onClick={handleButtonClick}
-            className="w-30 h-12 text-white rounded-md font-bold text-xl hover:scale-125 transition-all duration-500 jua-regular"
-            disabled={showAnimation || isExiting || selectedQuestions.length < 15}
-          >
-            게임 시작하기
-          </Button>
-        </div>
-      </div>
-
-      {/* 스크롤 가능한 영역 추가 */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-        <div className="grid gap-4 pb-20">
-          {customQuestions.map((question) => (
-            <Card
-              key={question.id}
-              className={`hover:shadow-lg transition-shadow cursor-pointer ${selectedQuestions.some(id => question.questions.includes(id))
-                  ? 'border-2 border-blue-500'
-                  : ''
-                }`}
-              onClick={() => handleQuestionSelect(question)}
+      <div className="p-6 space-y-6 h-screen flex flex-col overflow-hidden">
+        <div className="space-y-2 flex flex-row justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">My Question Sets</h2>
+            <p className="text-gray-500">생성한 15문제 세트들을 관리하고 선택하세요.</p>
+            <p className="text-sm text-gray-400">
+              {selectedQuestionSet ? "문제 세트가 선택되었습니다." : "게임을 시작하려면 문제 세트를 선택하세요."}
+            </p>
+          </div>
+          <div className="mr-8">
+            <Button
+                onClick={handleButtonClick}
+                className="w-30 h-12 text-white rounded-md font-bold text-xl hover:scale-125 transition-all duration-500 jua-regular"
+                disabled={showAnimation || isExiting || !selectedQuestionSet}
             >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{question.title}</CardTitle>
-                    <CardDescription>Created on {question.date}</CardDescription>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant="outline">{question.theme}</Badge>
-                    <Badge variant="secondary">{question.questionCount}문제</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <Badge variant="secondary">{question.difficulty}</Badge>
-                  <Button variant="ghost" size="sm">
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              게임 시작하기
+            </Button>
+          </div>
         </div>
+
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid gap-4 pb-20">
+            {questionSets.map((set) => (
+                <Card
+                    key={set.id}
+                    className={`hover:shadow-lg transition-all cursor-pointer ${
+                        selectedQuestionSet?.id === set.id ? 'border-2 border-blue-500 shadow-lg' : ''
+                    }`}
+                    onClick={() => handleQuestionSetSelect(set)}
+                >
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{set.topic}</CardTitle>
+                        <CardDescription>생성일: {formatDate(set.createdAt)}</CardDescription>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant="outline">{set.questionType}</Badge>
+                        <Badge variant="secondary">15문제</Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div className="flex gap-2">
+                        <Badge className={getTierColor(set.grade)} variant="secondary">
+                          {set.grade}
+                        </Badge>
+                        {set.grade !== '챌린저' && (
+                            <Badge variant="outline" className={getTierColor(set.grade)}>
+                              {set.tier}티어
+                            </Badge>
+                        )}
+                      </div>
+                      <Badge>{set.detailType}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+            ))}
+          </div>
+        </div>
+
+        {showAnimation && (
+            <div
+                className="fixed pointer-events-none"
+                style={{
+                  left: animationPosition.x - 100,
+                  top: animationPosition.y - 100,
+                  width: '200px',
+                  height: '200px',
+                  zIndex: 100
+                }}
+            >
+              <Player
+                  ref={playerRef}
+                  autoplay
+                  keepLastFrame={false}
+                  src={ClickAnimation}
+                  style={{width: '200px', height: '200px'}}
+                  onComplete={() => {
+                    setShowAnimation(false);
+                  }}
+              />
+            </div>
+        )}
+
+        {showFatiguePopup && (
+            <FatiguePopup onClose={() => setShowFatiguePopup(false)}/>
+        )}
+
+        <CustomAlertDialog
+            isOpen={alertDialog.isOpen}
+            onClose={() => setAlertDialog(prev => ({...prev, isOpen: false}))}
+            title={alertDialog.title}
+            description={alertDialog.description}
+        />
       </div>
-
-      {showAnimation && (
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            left: animationPosition.x - 100,
-            top: animationPosition.y - 100,
-            width: '200px',
-            height: '200px',
-            zIndex: 100
-          }}
-        >
-          <Player
-            ref={playerRef}
-            autoplay
-            keepLastFrame={false}
-            src={ClickAnimation}
-            style={{ width: '200px', height: '200px' }}
-            onComplete={() => {
-              setShowAnimation(false);
-            }}
-          />
-        </div>
-      )}
-
-      {showFatiguePopup && (
-        <FatiguePopup onClose={() => setShowFatiguePopup(false)} />
-      )}
-    </div>
   );
 };
 
-export default ListCustom; 
+export default ListCustom;

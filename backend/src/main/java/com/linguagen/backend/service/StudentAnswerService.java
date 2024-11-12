@@ -101,6 +101,17 @@ public class StudentAnswerService {
         List<StudentAnswer> answers = studentAnswerRepository
             .findBySessionIdentifierOrderByQuestionOrder(sessionIdentifier);
 
+
+        log.debug("Session Identifier: {}", sessionIdentifier);
+        log.debug("Number of answers found: {}", answers.size());
+
+        if (answers == null || answers.isEmpty()) {
+            // 빈 리스트인 경우 처리
+            log.warn("No answers found for session: {}", sessionIdentifier);
+            // 필요한 경우 예외를 던지거나, 빈 결과를 반환
+            return;
+        }
+
         if (answers.size() < 15) {
             String studentId = answers.get(0).getStudentId();
             for (int order = 1; order <= 15; order++) {

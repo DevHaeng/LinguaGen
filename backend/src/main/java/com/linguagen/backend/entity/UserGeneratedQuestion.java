@@ -63,6 +63,13 @@ public class UserGeneratedQuestion {
         createdAt = LocalDateTime.now();
     }
 
+    @Column(name = "set_id", nullable = false)
+    private String setId;  // 세트 ID 필드 추가
+
+    @Column(name = "question_order")
+    private Integer questionOrder;  // 세트 내 문제 순서
+
+
     public void addChoice(UserGeneratedQuestionChoice choice) {
         choices.add(choice);
         choice.setUserGeneratedQuestion(this);

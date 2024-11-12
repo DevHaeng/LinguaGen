@@ -4,9 +4,11 @@ import com.linguagen.backend.dto.QuestionDTO;
 import com.linguagen.backend.entity.Choices;
 import com.linguagen.backend.entity.Grade;
 import com.linguagen.backend.entity.Question;
+import com.linguagen.backend.entity.UserGeneratedQuestion;
 import com.linguagen.backend.exception.ResourceNotFoundException;
 import com.linguagen.backend.repository.GradeRepository;
 import com.linguagen.backend.repository.QuestionRepository;
+import com.linguagen.backend.repository.UserGeneratedQuestionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class QuestionService {
     private final QuestionRepository questionRepository;
     private final GradeRepository gradeRepository;
+    private final UserGeneratedQuestionRepository userGeneratedQuestionRepository;
 
 
     // 모든 문제 조회
@@ -301,5 +304,10 @@ public class QuestionService {
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
+
+
+
+
+
 }
 

@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 
-
-
 const useStore = create((set, get) => ({
-  // 기존 상태들 유지
+  // 기존 상태들
   isLoaded: false,
   startTyping: false,
   isLeaving: false,
@@ -24,18 +22,31 @@ const useStore = create((set, get) => ({
   fadeOut: false,
   showGoodbyeMessage: false,
 
-
+  // 로그인 상태
   isLoggedIn: false,
   setIsLoggedIn: (status) => set({ isLoggedIn: status }),
 
   // PracticeMenubar 상태
   selectedCard: null,
-
-
-
   setSelectedCard: (index) => set({ selectedCard: index }),
 
-  // 기존 액션들 유지
+  // 새로운 상태들 추가
+  currentQuestions: [],
+  selectedQuestionSet: null,
+  gameProgress: {
+    currentQuestionIndex: 0,
+    correctAnswers: 0,
+    wrongAnswers: 0,
+    answers: [],
+    isGameComplete: false
+  },
+
+  // MainContainer 관련 상태
+  cards: [],
+  loading: false,
+  fatigue: 0,
+
+  // 기존 액션들
   setIsLoaded: (value) => set({ isLoaded: value }),
   setStartTyping: (value) => set({ startTyping: value }),
   setIsLeaving: (value) => set({ isLeaving: value }),
@@ -55,6 +66,90 @@ const useStore = create((set, get) => ({
   setFadeIn: (value) => set({ fadeIn: value }),
   setFadeOut: (value) => set({ fadeOut: value }),
   setShowGoodbyeMessage: (value) => set({ showGoodbyeMessage: value }),
+
+  // 새로 추가: 문제 세트 관련 액션들
+  setCurrentQuestions: (questions) => set({ currentQuestions: questions }),
+  setSelectedQuestionSet: (questionSet) => set({ selectedQuestionSet: questionSet }),
+
+  setGameProgress: (progress) => set({ gameProgress: progress }),
+
+  resetGameProgress: () => set({
+    gameProgress: {
+      currentQuestionIndex: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      answers: [],
+      isGameComplete: false
+    }
+  }),
+
+  answerQuestion: (questionIndex, answer, isCorrect) => set((state) => ({
+    gameProgress: {
+      ...state.gameProgress,
+      currentQuestionIndex: state.gameProgress.currentQuestionIndex + 1,
+      correctAnswers: isCorrect
+          ? state.gameProgress.correctAnswers + 1
+          : state.gameProgress.correctAnswers,
+      wrongAnswers: !isCorrect
+          ? state.gameProgress.wrongAnswers + 1
+          : state.gameProgress.wrongAnswers,
+      answers: [
+        ...state.gameProgress.answers,
+        { questionIndex, userAnswer: answer, isCorrect }
+      ],
+      isGameComplete: state.gameProgress.currentQuestionIndex === 14 // 15문제 기준
+    }
+  })),
+
+  resetGame: () => {
+    set({
+      currentQuestions: [],
+      selectedQuestionSet: null,
+      gameProgress: {
+      currentQuestionIndex: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      answers: [],
+      isGameComplete: false
+      }
+    });
+  },
+
+  getCurrentQuestion: () => {
+    const state = get();
+    if (state.currentQuestions.length === 0) return null;
+    if (state.gameProgress.currentQuestionIndex >= state.currentQuestions.length) return null;
+    return state.currentQuestions[state.gameProgress.currentQuestionIndex];
+  },
+
+  // MainContainer 관련 액션들
+  setCards: (cards) => set({ cards }),
+  setLoading: (loading) => set({ loading }),
+
+  loadMoreCards: () => {
+    const state = get();
+    if (state.loading) return;
+
+    set({ loading: true });
+
+    setTimeout(() => {
+      const newCards = [
+        { date: '2024.xx.xx', category: '문법', level: 'Level 4', score: '5/10', rank: 'Bronz 4' },
+        { date: '2024.xx.xx', category: '문법', level: 'Level 3', score: '7/10', rank: 'Bronz 3' },
+        { date: '2024.xx.xx', category: '문법', level: 'Level 2', score: '8/10', rank: 'Bronz 2' },
+      ];
+      set((state) => ({
+        cards: [...state.cards, ...newCards],
+        loading: false
+      }));
+    }, 1000);
+  },
+
+  // 피로도 관련 액션들
+  setFatigue: (value) => set({ fatigue: value }),
+  increaseFatigue: (amount) => set((state) => ({
+    fatigue: Math.min(state.fatigue + amount, 100)
+  })),
 
   handleNext: () => set((state) => {
     if (state.currentQuestion < 4) {
@@ -97,42 +192,6 @@ const useStore = create((set, get) => ({
     }
     return state;
   }),
-
-  // MainContainer 관련 상태 추가
-  cards: [],
-  loading: false,
-
-  // MainContainer 관련 액션 추가
-  setCards: (cards) => set({ cards }),
-  setLoading: (loading) => set({ loading }),
-  loadMoreCards: () => {
-    const state = get();
-    if (state.loading) return;
-
-    set({ loading: true });
-
-    // 실제 API 호출 대신 setTimeout 사용
-    setTimeout(() => {
-      const newCards = [
-        { date: '2024.xx.xx', category: '문법', level: 'Level 4', score: '5/10', rank: 'Bronz 4' },
-        { date: '2024.xx.xx', category: '문법', level: 'Level 3', score: '7/10', rank: 'Bronz 3' },
-        { date: '2024.xx.xx', category: '문법', level: 'Level 2', score: '8/10', rank: 'Bronz 2' },
-      ];
-      set((state) => ({
-        cards: [...state.cards, ...newCards],
-        loading: false
-      }));
-    }, 1000);
-  },
-
-  fatigue: 0,
-  setFatigue: (value) => set({ fatigue: value }),
-  increaseFatigue: (amount) => set((state) => ({ 
-    fatigue: Math.min(state.fatigue + amount, 100) // 최대 100%를 넘지 않도록
-  })),
-
 }));
-
-
 
 export default useStore;

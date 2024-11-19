@@ -1,0 +1,28 @@
+# 빌드 아티팩트
+/build
+.gradle
+out
+
+# IntelliJ 설정 파일
+.idea
+*.iml
+
+# 로그 및 임시 파일
+logs
+*.log
+*.tmp
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+*.swp
+
+# Git 관련 파일
+.git
+.gitignore
+
+# 환경변수 파일 (보안을 위해 포함하지 않음)
+.env
+.env.local
+.env.production
+.env.development

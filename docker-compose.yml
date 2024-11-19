@@ -1,42 +1,54 @@
-services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - '8085:8085'
-    depends_on:
-      - redis
-    environment:
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    env_file:
-      - ./frontend/.env.production
-    networks:
-      - linguagen-net
+version: '3.8'
 
+services:
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_APP_API_BASE_URL: ${VITE_APP_API_BASE_URL}
+        VITE_APP_BASE_URL: ${VITE_APP_BASE_URL}
+        VITE_APP_IMP_KEY : ${VITE_APP_IMP_KEY}
     ports:
-      - '5173:5173'
-    env_file:
-      - ./frontend/.env.production
+      - "5173:5173"
+    environment:
+      VITE_APP_API_BASE_URL: ${VITE_APP_API_BASE_URL}
+      VITE_APP_BASE_URL: ${VITE_APP_BASE_URL}
+      VITE_APP_IMP_KEY : ${VITE_APP_IMP_KEY}
+    depends_on:
+      - backend
     networks:
-      - linguagen-net
+      - linguagen-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SPRING_REDIS_HOST: ${SPRING_REDIS_HOST}
+        SPRING_REDIS_PORT: ${SPRING_REDIS_PORT}
+        OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_REDIS_HOST: ${SPRING_REDIS_HOST}
+      SPRING_REDIS_PORT: ${SPRING_REDIS_PORT}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      - redis
+    networks:
+      - linguagen-network
 
   redis:
     image: redis:alpine
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis-data:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - linguagen-net
+      - linguagen-network
 
   redis-commander:
     image: rediscommander/redis-commander:latest
@@ -45,12 +57,10 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - linguagen-net
+      - linguagen-network
 
 volumes:
   redis-data:
 
 networks:
-  linguagen-net:
-    driver: bridge
-
+  linguagen-network:

@@ -44,13 +44,13 @@ import {
   Headphones,
   Plus,
   BookCheck
-} from "lucide-react"
+} from "lucide-react";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/components/ui/avatar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -58,13 +58,13 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@/components/ui/breadcrumb";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 import LearningInsetContent from './LearningInsetContent';
 import ChatInsetContent from './ChatInsetContent';
@@ -73,128 +73,134 @@ import ListCustom from './ListCustom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import FatiguePopup from './FatiguePopup';
 
-// 추가된 데이터 객체
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Learning",
-      url: "#",
-      icon: BookOpen,
-      isActive: true,
-      items: [
-        {
-          title: "Listening",
-          icon: Headphones,
-          url: "#",
-        },
-        {
-          title: "Reading",
-          icon: BookOpen,
-          url: "#",
-        },
-        {
-          title: "ETC",
-          icon: Command,
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "New Chat",
-      icon: BotMessageSquare,
-      url: "#",
-    }
-  ],
-}
-
 const canvases = [DungeonCanvas, RuinsCanvas, MountainCanvas];
 
 const MainContainer = ({ selectedGame }) => {
   const { cards, loading, loadMoreCards, isLoggedIn, fatigue } = useStore();
+
+  // userData 상태를 먼저 선언
+  const [userData, setUserData] = useState({
+    name: sessionStorage.getItem("nickname") || "Guest",
+    email: sessionStorage.getItem("id") || "",
+    avatar: sessionStorage.getItem("profileImageUrl") || "/default-avatar.jpg"
+  });
+
+  // data 객체를 컴포넌트 내부로 이동하고 userData 상태 사용
+  const data = {
+    user: userData, // 상태로 선언된 userData 사용
+    navMain: [
+      {
+        title: "Learning",
+        url: "#",
+        icon: BookOpen,
+        isActive: true,
+        items: [
+          {
+            title: "Listening",
+            icon: Headphones,
+            url: "#",
+          },
+          {
+            title: "Reading",
+            icon: BookOpen,
+            url: "#",
+          },
+          {
+            title: "ETC",
+            icon: Command,
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "Models",
+        url: "#",
+        icon: Bot,
+        items: [
+          {
+            title: "Genesis",
+            url: "#",
+          },
+          {
+            title: "Explorer",
+            url: "#",
+          },
+          {
+            title: "Quantum",
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "Documentation",
+        url: "#",
+        icon: BookOpen,
+        items: [
+          {
+            title: "Introduction",
+            url: "#",
+          },
+          {
+            title: "Get Started",
+            url: "#",
+          },
+          {
+            title: "Tutorials",
+            url: "#",
+          },
+          {
+            title: "Changelog",
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "Settings",
+        url: "#",
+        icon: Settings2,
+        items: [
+          {
+            title: "General",
+            url: "#",
+          },
+          {
+            title: "Team",
+            url: "#",
+          },
+          {
+            title: "Billing",
+            url: "#",
+          },
+          {
+            title: "Limits",
+            url: "#",
+          },
+        ],
+      },
+    ],
+    navSecondary: [
+      {
+        title: "Support",
+        url: "#",
+        icon: LifeBuoy,
+      },
+      {
+        title: "Feedback",
+        url: "#",
+        icon: Send,
+      },
+    ],
+    projects: [
+      {
+        name: "New Chat",
+        icon: BotMessageSquare,
+        url: "#",
+      }
+    ],
+  };
+
+
+
   const containerRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const [overscrollShadow, setOverscrollShadow] = useState(0);
@@ -213,6 +219,25 @@ const MainContainer = ({ selectedGame }) => {
   const playerRef = useRef(null);
   const [showFatiguePopup, setShowFatiguePopup] = useState(false);
   const [selectedGameType, setSelectedGameType] = useState('Listening'); // 현재 선택된 게임 타입
+
+  // sessionStorage의 사용자 정보 변경 감지를 위한 useEffect
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setUserData({
+        name: sessionStorage.getItem("name") || "Guest",
+        email: sessionStorage.getItem("email") || "",
+        avatar: sessionStorage.getItem("profileImage") || "/default-avatar.jpg"
+      });
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('storage', handleStorageChange);
+
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
 
   // 예시 단어 목록 (실제로는 API나 상태에서 가져와야 합니다)
@@ -544,6 +569,25 @@ const MainContainer = ({ selectedGame }) => {
         return null;
     }
   };
+
+  // sessionStorage의 사용자 정보 변경 감지를 위한 useEffect
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setUserData({
+        name: sessionStorage.getItem("name") || "Guest",
+        email: sessionStorage.getItem("email") || "",
+        avatar: sessionStorage.getItem("profileImage") || "/default-avatar.jpg"
+      });
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('storage', handleStorageChange);
+
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
 // 버튼 클릭 핸들러
   const handleButtonClick = (e) => {

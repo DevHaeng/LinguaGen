@@ -135,6 +135,8 @@ const ListCustom = () => {
   };
 
   const handleButtonClick = (e) => {
+    const userPlan = sessionStorage.getItem("plan");
+
     // 문제 세트가 선택되지 않은 경우
     if (!selectedQuestionSet) {
       showAlert(
@@ -144,8 +146,8 @@ const ListCustom = () => {
       return;
     }
 
-    // 피로도가 100%일 때
-    if (fatigue >= 100) {
+    // 피로도가 100%일 때 (pro 플랜이 아닌 경우)
+    if (fatigue >= 100 && userPlan !== "pro") {
       setShowFatiguePopup(true);
       return;
     }

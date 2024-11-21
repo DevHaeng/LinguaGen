@@ -8,13 +8,13 @@ services:
       args:
         VITE_APP_API_BASE_URL: ${VITE_APP_API_BASE_URL}
         VITE_APP_BASE_URL: ${VITE_APP_BASE_URL}
-        VITE_APP_IMP_KEY : ${VITE_APP_IMP_KEY}
+        VITE_APP_IMP_KEY: ${VITE_APP_IMP_KEY}
     ports:
       - "80:80"
     environment:
       VITE_APP_API_BASE_URL: ${VITE_APP_API_BASE_URL}
       VITE_APP_BASE_URL: ${VITE_APP_BASE_URL}
-      VITE_APP_IMP_KEY : ${VITE_APP_IMP_KEY}
+      VITE_APP_IMP_KEY: ${VITE_APP_IMP_KEY}
     depends_on:
       - backend
     networks:
@@ -25,42 +25,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        SPRING_REDIS_HOST: ${SPRING_REDIS_HOST}
-        SPRING_REDIS_PORT: ${SPRING_REDIS_PORT}
         OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:
       - "8085:8085"
     environment:
-      SPRING_REDIS_HOST: ${SPRING_REDIS_HOST}
-      SPRING_REDIS_PORT: ${SPRING_REDIS_PORT}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-    depends_on:
-      - redis
     networks:
       - linguagen-network
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - linguagen-network
-
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-    ports:
-      - "8081:8081"
-    networks:
-      - linguagen-network
-
-volumes:
-  redis-data:
 
 networks:
   linguagen-network:

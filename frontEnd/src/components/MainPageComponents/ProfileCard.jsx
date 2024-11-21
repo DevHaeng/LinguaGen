@@ -21,6 +21,7 @@ import GoldTier from "../../assets/imgs/Tiers/Gold Tier.png";
 import PlatinumTier from "../../assets/imgs/Tiers/Platinum Tier.png";
 import DiamondTier from "../../assets/imgs/Tiers/Diamond Tier.png";
 import ChellengerTier from "../../assets/imgs/Tiers/Chellenger Tier.png";
+import PremiumIcon from "../../assets/imgs/premium.png";
 
 import { Separator } from "@/components/ui/separator";
 import useStore from '../../store/useStore';
@@ -246,8 +247,27 @@ function ProfileCard() {
         </Avatar>
         <div className="mr-1 flex flex-col gap-4">
           <ContextMenu>
-            <ContextMenuTrigger className={`text-xl hover:text-green-400 transition-colors duration-300 select-none ${/^[a-zA-Z0-9]+$/.test(userInfo?.nickname || userInfo?.id || '') ? 'kanit-semibold' : 'jua-regular'}`}>
-              {userInfo ? (userInfo.nickname ? userInfo.nickname : userInfo.id) : 'USERNAME'}
+            <ContextMenuTrigger className="flex items-center">
+              <span className={`text-xl hover:text-green-400 transition-colors duration-300 select-none ${/^[a-zA-Z0-9]+$/.test(userInfo?.nickname || userInfo?.id || '') ? 'kanit-semibold' : 'jua-regular'}`}>
+                {userInfo ? (userInfo.nickname ? userInfo.nickname : userInfo.id) : 'USERNAME'}
+              </span>
+              {userInfo?.plan === 'pro' && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <img 
+                        src={PremiumIcon} 
+                        alt="프리미엄 회원" 
+                        className="w-6 h-6 ml-2"
+                        title="프리미엄 회원"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>프리미엄 회원입니다.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuItem>수정하기</ContextMenuItem>

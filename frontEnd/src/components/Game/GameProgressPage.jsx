@@ -39,7 +39,16 @@ const GameProgressPage = ({
                           }) => {
     const navigate = useNavigate();
     const userId = sessionStorage.getItem('id');
-    const { currentGameType } = useStore(); // useStore에서 현재 게임 타입 가져오기
+    const { 
+        currentGameType, 
+        correctCount, 
+        wrongCount,
+        totalScore,
+        incrementCorrect,
+        incrementWrong,
+        addScore,
+        resetCounts 
+    } = useStore();
 
     // State 선언들
     const [questions, setQuestions] = useState([]);
@@ -262,19 +271,18 @@ const GameProgressPage = ({
                 return;
             }
 
-            // 나만의 문제인 경우와 일반 문제인 경우를 구분
             let response;
             if (isCustomSet) {
                 // 나만의 문제 답안 제출
                 response = await axios.post("/user-questions/submit-answer", {
-                    sessionIdentifier: sessionIdentifier, // 세션 식별자 추가
+                    sessionIdentifier: sessionIdentifier,
                     questionIdx: submitData.questionId,
                     answer: submitData.studentAnswer
                 }, {
                     withCredentials: true
                 });
             } else {
-                // 기존 일반 문제 답안 제출
+                // 일반 문제 답안 제출
                 response = await api.post("/answers/submit", {
                     sessionIdentifier: sessionIdentifier,
                     idx: submitData.questionId,
@@ -288,25 +296,32 @@ const GameProgressPage = ({
             const result = response.data;
             console.log("Server response:", result);
 
-            // `isCorrect` 값을 Boolean 타입으로 변환
-            const isCorrect = result.isCorrect === true || result.isCorrect === 'true';
+            const isCorrect = result.isCorrect;
+            const score = isCorrect ? 2 : 0;
+
+            console.log("Parsed values - isCorrect:", isCorrect, "score:", score);
 
             if (isCorrect) {
                 onCorrectAnswer();
+                incrementCorrect();
+                addScore(2);
+                setFeedback(true);  // 정답 애니메이션을 위해 true로 설정
             } else {
                 onWrongAnswer();
+                incrementWrong();
+                setFeedback(false);  // 오답 애니메이션을 위해 false로 설정
             }
 
-            setFeedback(isCorrect);
             setShowFeedback(true);
             setShowAnimation(true);
+
         } catch (error) {
             console.error("Error submitting answer:", error);
             if (error.response) {
                 console.error("Server error details:", error.response.data);
             }
         }
-    }, [sessionIdentifier, currentQuestionNumber, userId, onCorrectAnswer, onWrongAnswer, isCustomSet]);
+    }, [sessionIdentifier, currentQuestionNumber, userId, onCorrectAnswer, onWrongAnswer, isCustomSet, incrementCorrect, incrementWrong, addScore, totalScore]);
 
 
     // 답안 처리 함수
@@ -905,15 +920,40 @@ const GameProgressPage = ({
                 className="flex flex-col items-center justify-center h-full"
             >
                 <h2 className="text-4xl font-bold text-red-600 mb-8">Game Over</h2>
+                <div className="flex flex-col items-center mb-8">
+                    <div className="text-2xl mb-4">최종 결과</div>
+                    <div className="flex gap-8 mb-4">
+                        <div className="text-green-500">
+                            <span className="font-bold">맞은 문제:</span> {correctCount}개
+                        </div>
+                        <div className="text-red-500">
+                            <span className="font-bold">틀린 문제:</span> {wrongCount}개
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="text-gray-600">
+                            정답률: {((correctCount / (correctCount + wrongCount)) * 100).toFixed(1)}%
+                        </div>
+                        <div className="text-blue-600 text-xl">
+                            <span className="font-bold">획득 점수:</span> {totalScore}점
+                        </div>
+                    </div>
+                </div>
                 <div className="flex space-x-4">
                     <button
-                        onClick={onRestart}
+                        onClick={() => {
+                            resetCounts(); // 카운트 초기화
+                            onRestart();
+                        }}
                         className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
                         Try Again
                     </button>
                     <button
-                        onClick={() => navigate('/main')}
+                        onClick={() => {
+                            resetCounts(); // 카운트 초기화
+                            navigate('/main');
+                        }}
                         className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
                     >
                         Main Menu
@@ -932,15 +972,40 @@ const GameProgressPage = ({
                 className="flex flex-col items-center justify-center h-full"
             >
                 <h2 className="text-4xl font-bold text-green-600 mb-8">Game Clear!</h2>
+                <div className="flex flex-col items-center mb-8">
+                    <div className="text-2xl mb-4">최종 결과</div>
+                    <div className="flex gap-8 mb-4">
+                        <div className="text-green-500">
+                            <span className="font-bold">맞은 문제:</span> {correctCount}개
+                        </div>
+                        <div className="text-red-500">
+                            <span className="font-bold">틀린 문제:</span> {wrongCount}개
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="text-gray-600">
+                            정답률: {((correctCount / (correctCount + wrongCount)) * 100).toFixed(1)}%
+                        </div>
+                        <div className="text-blue-600 text-xl">
+                            <span className="font-bold">획득 점수:</span> {totalScore}점
+                        </div>
+                    </div>
+                </div>
                 <div className="flex space-x-4">
                     <button
-                        onClick={onRestart}
+                        onClick={() => {
+                            resetCounts(); // 카운트 초기화
+                            onRestart();
+                        }}
                         className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
                         Play Again
                     </button>
                     <button
-                        onClick={() => navigate('/main')}
+                        onClick={() => {
+                            resetCounts(); // 카운트 초기화
+                            navigate('/main');
+                        }}
                         className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
                     >
                         Main Menu

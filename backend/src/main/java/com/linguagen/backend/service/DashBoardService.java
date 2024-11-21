@@ -7,8 +7,6 @@ import com.linguagen.backend.entity.Question;
 import com.linguagen.backend.entity.StudentAnswer;
 import com.linguagen.backend.repository.StudentAnswerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,7 +25,6 @@ public class DashBoardService {
         this.studentAnswerRepository = studentAnswerRepository;
     }
 
-    @Cacheable(value = "latestStudyInfo", key = "#studentId")
     public LatestStudyInfoDto getLatestStudyInfo(String studentId) {
         Optional<StudentAnswer> latestLogOpt = studentAnswerRepository.findTopByStudentIdOrderByCreatedAtDesc(studentId);
         if (latestLogOpt.isPresent()) {
@@ -42,22 +39,18 @@ public class DashBoardService {
         return null;
     }
 
-    @Cacheable(value = "dailyPlayCounts", key = "#studentId")
     public List<DailyPlayCountDto> getDailyPlayCounts(String studentId) {
         return studentAnswerRepository.findDailyPlayCountsByStudentId(studentId);
     }
 
-    @Cacheable(value = "gameCount", key = "#studentId")
     public Long getGameCountByStudentId(String studentId) {
         return studentAnswerRepository.getGameCountByStudentId(studentId);
     }
 
-    @Cacheable(value = "correctRate", key = "#studentId")
     public Double getAverageCorrectRateByStudentId(String studentId) {
         return studentAnswerRepository.findAverageCorrectRateByStudentId(studentId);
     }
 
-    @Cacheable(value = "weeklyStudyDays", key = "#studentId")
     public List<String> getStudyDaysThisWeekByStudentId(String studentId) {
         LocalDateTime startOfWeek = LocalDate.now().with(java.time.DayOfWeek.MONDAY).atStartOfDay();
         LocalDateTime endOfWeek = startOfWeek.plusDays(6).withHour(23).withMinute(59).withSecond(59);
@@ -68,10 +61,9 @@ public class DashBoardService {
                 .collect(Collectors.toList());
     }
 
-    @Cacheable(value = "incorrectTypes", key = "#studentId")
     public List<IncorrectTypePercentageDto> getIncorrectTypePercentage(String studentId) {
-        List<IncorrectTypePercentageDto> incorrectTypeCounts = 
-            studentAnswerRepository.findIncorrectDetailTypeCountsByStudentId(studentId);
+        List<IncorrectTypePercentageDto> incorrectTypeCounts =
+                studentAnswerRepository.findIncorrectDetailTypeCountsByStudentId(studentId);
 
         long totalIncorrect = incorrectTypeCounts.stream()
                 .mapToLong(IncorrectTypePercentageDto::getIncorrectCount)
@@ -85,15 +77,4 @@ public class DashBoardService {
                 .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = {
-        "latestStudyInfo", 
-        "dailyPlayCounts", 
-        "gameCount", 
-        "correctRate", 
-        "weeklyStudyDays", 
-        "incorrectTypes"
-    }, key = "#studentId")
-    public void clearStudentCache(String studentId) {
-        // 캐시 초기화만 수행
-    }
 }

@@ -8,9 +8,11 @@ import com.linguagen.backend.repository.GradeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AnswerProcessor {
 
     private final QuestionService questionService;
@@ -53,7 +55,17 @@ public class AnswerProcessor {
         if (isCorrect) {
             answer.setFeedback("정답입니다!");
 
-            // 등급 정보 조회 및 점수 계산
+            // 등급 정보 로깅
+            log.debug("Student grade info - StudentId: {}, Grade: {}, Tier: {}", 
+                answer.getStudentId(),
+                getStudentGrade(answer.getStudentId()),
+                getStudentTier(answer.getStudentId()));
+            
+            log.debug("Question grade info - Grade: {}, Tier: {}", 
+                question.getDiffGrade(),
+                question.getDiffTier());
+
+            // 점수 계산 과정 로깅
             int studentGrade = getStudentGrade(answer.getStudentId());
             int questionGrade = question.getDiffGrade();
             int studentTier = getStudentTier(answer.getStudentId());
@@ -61,18 +73,26 @@ public class AnswerProcessor {
 
             int scoreToAdd;
             if (questionGrade > studentGrade || questionTier < studentTier) {
-                scoreToAdd = 3; // 높은 등급 문제를 맞춘 경우
+                scoreToAdd = 3;
+                log.debug("높은 등급/티어 문제 정답: +3점");
             } else if (questionGrade == studentGrade && questionTier == studentTier) {
-                scoreToAdd = 2; // 동일 등급 문제를 맞춘 경우
+                scoreToAdd = 2;
+                log.debug("동일 등급/티어 문제 정답: +2점");
             } else {
-                scoreToAdd = 1; // 낮은 등급 문제를 맞춘 경우
+                scoreToAdd = 1;
+                log.debug("낮은 등급/티어 문제 정답: +1점");
             }
-            // 점수를 StudentAnswer에 설정
+
+            // 점수 설정 및 로깅
             answer.setScore(scoreToAdd);
+            log.debug("Final score set - StudentId: {}, Score: {}, QuestionGrade: {}, StudentGrade: {}", 
+                answer.getStudentId(), 
+                scoreToAdd, 
+                questionGrade, 
+                studentGrade);
 
-            // 별도 트랜잭션으로 exp 업데이트
+            // exp 업데이트
             gradeService.updateGradeExp(answer.getStudentId(), scoreToAdd);
-
 
         } else {
             String correctAnswerText = question.getChoices().stream()
@@ -82,6 +102,7 @@ public class AnswerProcessor {
                     .orElse("");
             // 점수를 StudentAnswer에 설정
             answer.setScore(0);
+            log.debug("오답 처리 - 학생ID: {}, 점수: 0", answer.getStudentId());
             answer.setFeedback("오답입니다. 정답은 " + correctLabel + ") " + correctAnswerText + " 입니다.");
         }
     }
@@ -105,14 +126,19 @@ public class AnswerProcessor {
             int scoreToAdd;
             if (questionGrade > studentGrade || questionTier < studentTier) {
                 scoreToAdd = 3; // 높은 등급 문제를 맞춘 경우
+                log.debug("높은 등급/티어 문제 정답: +3점");
             } else if (questionGrade == studentGrade && questionTier == studentTier) {
                 scoreToAdd = 2; // 동일 등급 문제를 맞춘 경우
+                log.debug("동일 등급/티어 문제 정답: +2점");
             } else {
                 scoreToAdd = 1; // 낮은 등급 문제를 맞춘 경우
+                log.debug("낮은 등급/티어 문제 정답: +1점");
             }
 
             // 점수를 StudentAnswer에 설정
             answer.setScore(scoreToAdd);
+            log.debug("계산된 점수 설정 - 학생ID: {}, 점수: {}, 문제등급: {}, 학생등급: {}", 
+                answer.getStudentId(), scoreToAdd, questionGrade, studentGrade);
 
             // 별도 트랜잭션으로 exp 업데이트
             gradeService.updateGradeExp(answer.getStudentId(), scoreToAdd);
@@ -120,7 +146,8 @@ public class AnswerProcessor {
         } else {
             answer.setFeedback("오답입니다. 정답은 '" + correctAnswer + "' 입니다.");
             // 점수를 StudentAnswer에 설정
-            answer.setScore(0); // 오답일 경우 점수는 0
+            answer.setScore(0);
+            log.debug("오답 처리 - 학생ID: {}, 점수: 0", answer.getStudentId());
         }
     }
 

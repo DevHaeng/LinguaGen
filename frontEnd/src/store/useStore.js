@@ -222,6 +222,15 @@ const useStore = create(
             }
             return state;
           }),
+
+          // 새로운 상태 추가
+          correctCount: 0,
+          wrongCount: 0,
+          totalScore: 0,
+          resetCounts: () => set({ correctCount: 0, wrongCount: 0, totalScore: 0 }),
+          incrementCorrect: () => set(state => ({ correctCount: state.correctCount + 1 })),
+          incrementWrong: () => set(state => ({ wrongCount: state.wrongCount + 1 })),
+          addScore: (score) => set(state => ({ totalScore: state.totalScore + score })),
         }),
         {
           name: 'game-storage',

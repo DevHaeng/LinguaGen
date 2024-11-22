@@ -1,9 +1,6 @@
 package com.linguagen.backend.repository;
 
-import com.linguagen.backend.dto.DailyPlayCountDto;
-import com.linguagen.backend.dto.IncorrectTypePercentageDto;
-import com.linguagen.backend.dto.MyPageDTO;
-import com.linguagen.backend.dto.QuestionDTO;
+import com.linguagen.backend.dto.*;
 import com.linguagen.backend.entity.StudentAnswer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -107,6 +104,20 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
             "JOIN sa.question q " +
             "WHERE sa.studentId = :studentId")
     List<QuestionDTO> findQuestionsByStudentId(@Param("studentId") String studentId);
+
+    
+    //주간랭킹(주간 score 합 반환)
+    @Query("SELECT new com.linguagen.backend.dto.WeeklyRankingDTO(sa.studentId, SUM(sa.score), g.grade) " +
+            "FROM StudentAnswer sa " +
+            "JOIN Grade g ON sa.studentId = g.userId " +
+            "WHERE sa.createdAt BETWEEN :startOfWeek AND :endOfWeek " +
+            "GROUP BY sa.studentId, g.grade " +
+            "ORDER BY SUM(sa.score) DESC")
+    List<WeeklyRankingDTO> findWeeklyRanking(@Param("startOfWeek") LocalDateTime startOfWeek,
+                                             @Param("endOfWeek") LocalDateTime endOfWeek);
+
+
+
 }
 
 

@@ -1,6 +1,7 @@
 package com.linguagen.backend.controller;
 
 import com.linguagen.backend.dto.RankingLogDTO;
+import com.linguagen.backend.dto.WeeklyRankingDTO;
 import com.linguagen.backend.entity.WeeklyGradeRanking;
 import com.linguagen.backend.entity.WeeklyOverallRanking;
 import com.linguagen.backend.service.RankingLogService;
@@ -22,22 +23,28 @@ public class RankingController {
         return service.getPersonalRanking(grade);
     }
 
-    // 주간 랭킹 전체 조회
-    @GetMapping("/weekly-overall")
-    public List<WeeklyOverallRanking> getWeeklyOverallRanking() {
-        return service.getWeeklyOverallRanking();
-    }
+//    // 주간 랭킹 전체 조회
+//    @GetMapping("/weekly-overall")
+//    public List<WeeklyOverallRanking> getWeeklyOverallRanking() {
+//        return service.getWeeklyOverallRanking();
+//    }
+//
+//    // 주간 랭킹 등급별 조회
+//    @GetMapping("/weekly-grade")
+//    public List<WeeklyGradeRanking> getWeeklyGradeRanking() {
+//        return service.getWeeklyGradeRanking();
+//    }
 
-    // 주간 랭킹 등급별 조회
-    @GetMapping("/weekly-grade")
-    public List<WeeklyGradeRanking> getWeeklyGradeRanking() {
-        return service.getWeeklyGradeRanking();
-    }
-
-
+    //월간 랭킹 반환
     @GetMapping("/{studentId}")
     public List<RankingLogDTO> getMonthlyOverallRanksByStudentId(@PathVariable("studentId") String studentId) {
         return service.getMonthlyOverallRanksByStudentId(studentId);
+    }
+
+    //주간 랭킹 반환
+    @GetMapping("/weekly")
+    public List<WeeklyRankingDTO> getWeeklyRanking() {
+        return service.getWeeklyRanking();
     }
 
 }

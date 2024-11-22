@@ -72,9 +72,9 @@ const RankingPage = () => {
     const [filteredData, setFilteredData] = useState([]);
     const [displayedData, setDisplayedData] = useState([]);
     const [page, setPage] = useState(1);
-    const itemsPerPage = 30;
+    const itemsPerPage = 200;
     const [searchTerm, setSearchTerm] = useState('');
-    const [activePanel, setActivePanel] = useState('weeklyOverall');
+    const [activePanel, setActivePanel] = useState('personalRanking');
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -119,8 +119,14 @@ const RankingPage = () => {
     // API 호출: 주간 전체 랭킹 데이터 가져오기
     const fetchWeeklyOverallRanking = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_APP_API_BASE_URL}/ranking/weekly-overall`);
-            const data = await response.json();
+            const response = await fetch(`${import.meta.env.VITE_APP_API_BASE_URL}/ranking/weekly`);
+            let data = await response.json();
+
+            // 순위 계산
+            data = data
+                .sort((a, b) => b.exp - a.exp) // exp 기준 내림차순 정렬
+                .map((item, index) => ({ ...item, overallRank: index + 1 })); // 순위 추가
+
             setWeeklyOverallData(data);
             setFilteredData(Array.isArray(data) ? data : []);
             if (activePanel === 'weeklyOverall') setFilteredData(data);
@@ -129,18 +135,6 @@ const RankingPage = () => {
         }
     };
 
-    // API 호출: 주간 등급별 랭킹 데이터 가져오기
-    const fetchWeeklyGradeRanking = async () => {
-        try {
-            const response = await fetch(`${import.meta.env.VITE_APP_API_BASE_URL}/ranking/weekly-grade`);
-            const data = await response.json();
-            setWeeklyGradeData(data);
-            setFilteredData(Array.isArray(data) ? data : []);
-            if (activePanel === 'weeklyGrade') setFilteredData(data);
-        } catch (err) {
-            console.error('Weekly Grade ranking fetch error:', err);
-        }
-    };
 
     // API 호출: 개인 랭킹 데이터 가져오기
     const fetchPersonalRankingData = async (grade = 0) => {
@@ -159,8 +153,6 @@ const RankingPage = () => {
     useEffect(() => {
         if (activePanel === 'weeklyOverall') {
             fetchWeeklyOverallRanking();
-        } else if (activePanel === 'weeklyGrade') {
-            fetchWeeklyGradeRanking();
         } else if (activePanel === 'personalRanking') {
             fetchPersonalRankingData();
         }
@@ -310,16 +302,16 @@ const RankingPage = () => {
                         <SectionTitle className='jua-regular text-2xl'>랭킹</SectionTitle>
                         <List className='jua-regular text-xl'>
                             <ListItem
-                                isActive={activePanel === 'weeklyRanking'}
-                                onClick={() => setActivePanel('weeklyRanking')}
-                            >
-                                주간 랭킹
-                            </ListItem>
-                            <ListItem
                                 isActive={activePanel === 'personalRanking'}
                                 onClick={() => setActivePanel('personalRanking')}
                             >
                                 개인 랭킹
+                            </ListItem>
+                            <ListItem
+                                isActive={activePanel === 'weeklyOverall'}
+                                onClick={() => setActivePanel('weeklyOverall')}
+                            >
+                                주간 랭킹
                             </ListItem>
                             <ListItem
                                 isActive={activePanel === 'groupRanking'}
@@ -425,19 +417,13 @@ const RankingPage = () => {
                                             </th>
                                         </>
                                     )}
-                                    {activePanel === 'weeklyRanking' && (
+                                    {activePanel === 'weeklyOverall' && (
                                         <>
                                             <th
                                                 className={headerStyle}
-                                                onClick={() => handleSort('correctAnswers')}
+                                                onClick={() => handleSort('exp')}
                                             >
-                                                학습한 문제 {getSortIcon('correctAnswers')}
-                                            </th>
-                                            <th
-                                                className={headerStyle}
-                                                onClick={() => handleSort('lastCorrectDate')}
-                                            >
-                                                마지막 학습 날짜 {getSortIcon('lastCorrectDate')}
+                                                경험치 {getSortIcon('exp')}
                                             </th>
                                         </>
                                     )}
@@ -467,10 +453,10 @@ const RankingPage = () => {
                                                 </>
                                             )}
 
-                                            {activePanel === 'weeklyRanking' && (
+                                            {activePanel === 'weeklyOverall' && (
                                                 <>
-                                                    <td className="p-3">{`${item.correctAnswers}`}</td>
-                                                    <td className="p-3">{new Date(item.lastCorrectDate).toISOString().split('T')[0]}</td>
+                                                    <td className="p-3">{`${item.exp}`}</td>
+
                                                 </>
                                             )}
                                         </tr>

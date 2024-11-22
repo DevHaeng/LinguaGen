@@ -1,6 +1,7 @@
 package com.linguagen.backend.service;
 
 import com.linguagen.backend.dto.RankingLogDTO;
+import com.linguagen.backend.dto.WeeklyRankingDTO;
 import com.linguagen.backend.entity.*;
 import com.linguagen.backend.repository.*;
 import jakarta.annotation.PostConstruct;
@@ -28,6 +29,8 @@ public class RankingLogService {
     private WeeklyOverallRankingRepository overallRankingRepository;
     @Autowired
     private WeeklyGradeRankingRepository gradeRankingRepository;
+    @Autowired
+    private StudentAnswerRepository studentAnswerRepository;
 
     // 개인 랭킹 생성 메서드 - 매일 자정에 실행
     @Scheduled(cron = "0 0 0 * * *")
@@ -97,14 +100,28 @@ public class RankingLogService {
             repository.save(rankingLog);
         }
     }
+//
+//    public List<WeeklyOverallRanking> getWeeklyOverallRanking() {
+//        return overallRankingRepository.findAll();
+//    }
+//
+//    public List<WeeklyGradeRanking> getWeeklyGradeRanking() {
+//        return gradeRankingRepository.findAll();
+//    }
 
-    public List<WeeklyOverallRanking> getWeeklyOverallRanking() {
-        return overallRankingRepository.findAll();
+
+    //주간랭킹
+    public List<WeeklyRankingDTO> getWeeklyRanking() {
+        // 현재 주의 시작일과 종료일 계산
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfWeek = today.minusDays(today.getDayOfWeek().getValue() - 1).atStartOfDay();
+        LocalDateTime endOfWeek = startOfWeek.plusDays(6).withHour(23).withMinute(59).withSecond(59);
+
+        // Repository 호출
+        return studentAnswerRepository.findWeeklyRanking(startOfWeek, endOfWeek);
     }
 
-    public List<WeeklyGradeRanking> getWeeklyGradeRanking() {
-        return gradeRankingRepository.findAll();
-    }
+
 
     //매월 1일 랭킹 조회
     public List<RankingLogDTO> getMonthlyOverallRanksByStudentId(String studentId) {

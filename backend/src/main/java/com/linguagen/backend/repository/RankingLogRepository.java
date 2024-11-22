@@ -42,6 +42,8 @@ public interface RankingLogRepository extends JpaRepository<RankingLog, Long> {
         @Param("type") String type,
         @Param("today") LocalDate today);
 
+    
+    //월간 랭킹
     @Query("SELECT new com.linguagen.backend.dto.RankingLogDTO(r.logDate, r.overallRank) " +
         "FROM RankingLog r " +
         "WHERE FUNCTION('DAY', r.logDate) = 1 AND r.user.id = :studentId " +

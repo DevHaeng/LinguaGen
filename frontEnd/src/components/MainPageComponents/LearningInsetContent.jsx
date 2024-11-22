@@ -172,7 +172,7 @@ const LearningInsetContent = ({
                                     <span className="text-gray-800 font-semibold">{getGradeName(item.diffGrade)} {item.diffTier}</span>
                                 </div>
                             </div>
-                            <div className="md:w-1/3 flex items-center justify-center">
+                            <div className="md:w-1/3 flex justify-center md:justify-end pt-8">
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <button
@@ -203,18 +203,23 @@ const LearningInsetContent = ({
                                             </div>
                                         </button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[600px] h-[600px] overflow-y-auto bg-white rounded-xl">
-                                        <DialogHeader className="bg-gradient-to-r from-black to-white text-white p-6 rounded-t-xl">
+                                    <DialogContent
+                                        className="sm:max-w-[600px] h-[600px] overflow-y-auto bg-white rounded-xl">
+                                        <DialogHeader
+                                            className="bg-gradient-to-r from-black to-white text-white p-6 rounded-t-xl">
                                             <DialogTitle className="text-xl font-bold">틀린 단어 노트</DialogTitle>
-                                            <DialogDescription className="text-blue-100">틀린 단어를 확인하세요~</DialogDescription>
+                                            <DialogDescription className="text-blue-100">틀린 단어를
+                                                확인하세요~</DialogDescription>
                                         </DialogHeader>
                                         <div className="grid grid-cols-2 gap-4 p-6">
                                             {wrongWords.map((word, index) => (
                                                 <React.Fragment key={index}>
-                                                    <div className="bg-gray-50 p-4 rounded-lg shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                                                    <div
+                                                        className="bg-gray-50 p-4 rounded-lg shadow-sm hover:bg-gray-100 transition-colors duration-200">
                                                         <p className="font-medium text-gray-800">{word.english}</p>
                                                     </div>
-                                                    <div className="bg-gray-50 p-4 rounded-lg shadow-sm hover:bg-gray-100 transition-colors duration-200">
+                                                    <div
+                                                        className="bg-gray-50 p-4 rounded-lg shadow-sm hover:bg-gray-100 transition-colors duration-200">
                                                         <p className="font-medium text-gray-800">{word.korean}</p>
                                                     </div>
                                                 </React.Fragment>

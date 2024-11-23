@@ -160,204 +160,234 @@ const MountainCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    // 캔버스 초기화
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 배경 그리기
-    if (backgroundRef.current.complete) {
-      ctx.drawImage(backgroundRef.current, 0, 0, canvas.width, canvas.height);
-    }
-
-    // 보스 스프라이트 그리기
-    const bossImages = {
-      idle: bossIdleImages.current,
-      attack: bossAttackImages.current,
-      takeHit: bossTakeHitImages.current,
-      death: bossDeathImages.current
-    }[bossState];
-
-    const bossImage = bossImages[bossFrameIndex];
-    if (bossImage && bossImage.complete) {
-      const bossScale = 2; // 보스 크기 증가
-      const bossWidth = (bossImage.width + 100) * bossScale;
-      const bossHeight = bossImage.height * bossScale;
-      ctx.drawImage(
-          bossImage,
-          canvas.width / 2.5, // 보스를 오른쪽으로 이동
-          canvas.height - bossHeight,
-          bossWidth,
-          bossHeight
-      );
-    }
-
-    // knightImages 객체 수정
-    const knightImages = {
-      idle: knightIdleImages.current,
-      attack: knightAttackImages.current,
-      takeHit: knightTakeHitImages.current, // 오타 수정: knightTakeHitSprites -> knightTakeHitImages
-      death: knightDeathImages.current,
-      spAttack: knightSpAttackImages.current
-    }[knightState];
-
-// null check 추가
-    if (!knightImages || !knightImages[knightFrameIndex]) {
-      return; // 이미지가 로드되지 않았으면 그리기 건너뛰기
-    }
-
-    const knightImage = knightImages[knightFrameIndex];
-    if (knightImage && knightImage.complete) {
-      const knightScale = 2; // 기사 크기 증가
-      const knightWidth = (knightImage.width + 100) * knightScale;
-      const knightHeight = knightImage.height * knightScale;
-      ctx.drawImage(
-          knightImage,
-          canvas.width / 1.5 - knightWidth - 90, // 기사를 왼쪽으로 이동
-          canvas.height - knightHeight,
-          knightWidth,
-          knightHeight
-      );
-    }
-
-    // 체력 바 그리기
-    drawHealthBar(ctx, 10, 10, knightHP, true); // 기사 체력 바 (왼쪽)
-    drawHealthBar(ctx, canvas.width - 320, 10, bossHP, false); // 보스 체력 바 (오른쪽) - 위치 조정
-
-    // 텍스트 그리기
-    if (fontLoadedRef.current) {
-      ctx.font = '30px AntiquityPrint';
-      ctx.fillStyle = 'green';
-      ctx.textAlign = 'center';
-      ctx.fillText('LinguaGen', canvas.width / 2, 50);
-
-      ctx.font = '24px AntiquityPrint';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${currentQuestion}/${totalQuestions}`, canvas.width / 7, 30);
-
-      ctx.font = '24px AntiquityPrint';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = isExitHovered ? 'green' : 'white';
-      ctx.fillText('Exit', canvas.width / 30, 85);
-
-      // GameOver 텍스트 그리기
-      if (isGameOver) {
-        ctx.font = '48px AntiquityPrint';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = `rgba(255, 0, 0, ${gameOverOpacity})`;
-        ctx.fillText('Game Over', canvas.width / 2, canvas.height / 1.7);
-      }
-
-      // GameClear 텍스트 그리기
-      if (isGameClear) {
-        ctx.font = '48px AntiquityPrint';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = `rgba(0, 255, 0, ${gameClearOpacity})`;
-        ctx.fillText('Game Clear', canvas.width / 2, canvas.height / 1.7);
-      }
-
-      const soundImage = isSoundOn ? soundOnImage.current : soundOffImage.current;
-      if (soundImage && soundImage.complete) {
-        const iconSize = 30; // 아이콘 크기
-        const iconX = canvas.width / 30 - iconSize / 2;
-        const iconY = 115;
-
-        // 마우스 호버 효과
-        if (isSoundHovered) {
-          ctx.globalAlpha = 0.7;
-        }
-
-        // 사운드 아이콘 그리기
-        ctx.drawImage(soundImage, iconX, iconY, iconSize, iconSize);
-        ctx.globalAlpha = 1.0;
-      }
-    }
-
-    animationRef.current = requestAnimationFrame(animate);
-  }, [bossState, bossFrameIndex, knightState, knightFrameIndex, bossHP, knightHP, drawHealthBar, currentQuestion, totalQuestions, isExitHovered, isGameOver, gameOverOpacity, isGameClear, gameClearOpacity, isSoundOn, isSoundHovered]);
-
-  const handleMouseMove = useCallback((event) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // Exit 텍스트 영역 (좌상단)
-    const exitX = canvas.width / 30;
-    const exitY = 85;
-    const exitWidth = 40;
-    const exitHeight = 30;
-
-    // Sound 아이콘 영역
-    const iconSize = 30;
-    const soundX = canvas.width / 30 - iconSize / 2;
-    const soundY = 115;
-
-    // Exit 영역 체크 (텍스트 주변 영역을 약간 아래로)
-    setIsExitHovered(
-        x >= exitX - exitWidth / 2 &&
-        x <= exitX + exitWidth / 2 &&
-        y >= exitY - exitHeight / 2 + 30 &&
-        y <= exitY + exitHeight / 2 + 30
-    );
-
-    // Sound 아이콘 영역 체크 (영역을 약간 아래로)
-    setIsSoundHovered(
-        x >= soundX &&
-        x <= soundX + iconSize &&
-        y >= soundY + 75 &&
-        y <= soundY + iconSize + 75
-    );
-  }, []);
-
-  const handleExitClick = useCallback((event) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    const exitX = canvas.width / 30;
-    const exitY = 85;
-    const exitWidth = 40;
-    const exitHeight = 30;
-
-    // Exit 영역 클릭 감지
-    if (
-        x >= exitX - exitWidth / 2 &&
-        x <= exitX + exitWidth / 2 &&
-        y >= exitY - exitHeight / 2 + 30 &&
-        y <= exitY + exitHeight / 2 + 30
-    ) {
-      setShowExitDialog(true);
-    }
-  }, []);
-
-  const handleCanvasClick = useCallback((event) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // Sound 아이콘 클릭 처리
-    const iconSize = 30;
-    const soundX = canvas.width / 30 - iconSize / 2;
-    const soundY = 115;
-
-    if (
-        x >= soundX &&
-        x <= soundX + iconSize &&
-        y >= soundY + 75 &&
-        y <= soundY + iconSize + 75
-    ) {
-      setIsSoundOn(prev => !prev);
-    }
-
-    // Exit 클릭 처리
-    handleExitClick(event);  // 이벤트 객체를 전달
-  }, [handleExitClick]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.width = canvas.parentElement.offsetWidth;
-    canvas.height = canvas.parentElement.offsetHeight * 0.6;
+     // 캔버스 초기화를 확실히 하고
+     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+     // 텍스트 렌더링을 부드럽게
+     ctx.imageSmoothingEnabled = true;
+     ctx.imageSmoothingQuality = 'high';
+     
+     ctx.font = '24px AntiquityPrint';
+     ctx.textAlign = 'center';
+     // 텍스트 안티앨리어싱 적용
+     ctx.textBaseline = 'middle';
+     const textX = canvas.width < 1350 ? canvas.width / 4 : canvas.width / 7;
+     const textY = canvas.width < 784 ? 65 : 30;
+     // 텍스트 렌더링
+     ctx.fillText(`${currentQuestion}/${totalQuestions}`, Math.round(textX), Math.round(textY));
+ 
+     // 배경 그리기
+     if (backgroundRef.current.complete) {
+       ctx.drawImage(backgroundRef.current, 0, 0, canvas.width, canvas.height);
+     }
+ 
+     // 보스 스프라이트 그리기
+     const bossImages = {
+       idle: bossIdleImages.current,
+       attack: bossAttackImages.current,
+       takeHit: bossTakeHitImages.current,
+       death: bossDeathImages.current
+     }[bossState];
+ 
+     const bossImage = bossImages[bossFrameIndex];
+     if (bossImage && bossImage.complete) {
+       const bossScale = canvas.width < 784 ? 1.5 : 2;
+       const bossWidth = (bossImage.width + 100) * bossScale;
+       const bossHeight = bossImage.height * bossScale;
+       // 784px 미만일 때는 더 가운데로 이동
+       const bossX = canvas.width < 784 
+         ? canvas.width / 8  // 보스 위치 유지
+         : canvas.width / 2.5;
+       ctx.drawImage(
+         bossImage,
+         bossX,
+         canvas.height - bossHeight,
+         bossWidth,
+         bossHeight
+       );
+     }
+ 
+     // knightImages 객체 수정
+     const knightImages = {
+       idle: knightIdleImages.current,
+       attack: knightAttackImages.current,
+       takeHit: knightTakeHitImages.current, // 오타 수정: knightTakeHitSprites -> knightTakeHitImages
+       death: knightDeathImages.current,
+       spAttack: knightSpAttackImages.current
+     }[knightState];
+ 
+ // null check 추가
+     if (!knightImages || !knightImages[knightFrameIndex]) {
+       return; // 이미지가 로드되지 않았으면 그리기 건너뛰기
+     }
+ 
+     // 기사 스프라이트 그리기
+     const knightImage = knightImages[knightFrameIndex];
+     if (knightImage && knightImage.complete) {
+       const knightScale = canvas.width < 784 ? 1.5 : 2;
+       const knightWidth = (knightImage.width + 100) * knightScale;
+       const knightHeight = knightImage.height * knightScale;
+       // 784px 미만일 때는 보스 기준으로 왼쪽에 배치
+       const knightX = canvas.width < 784
+         ? -180  // 직접 음수 값을 지정하여 더 왼쪽으로 이동
+         : canvas.width / 1.5 - knightWidth - 90;
+       ctx.drawImage(
+         knightImage,
+         knightX,
+         canvas.height - knightHeight,
+         knightWidth,
+         knightHeight
+       );
+     }
+ 
+     // 체력 바 그리기
+     drawHealthBar(ctx, 10, 10, knightHP, true); // 기사 체력 바 (왼쪽)
+     drawHealthBar(ctx, canvas.width - 320, 10, bossHP, false); // 보스 체력 바 (오른쪽) - 위치 조정
+ 
+     // 텍스트 그리기
+     if (fontLoadedRef.current) {
+       // LinguaGen 텍스트는 784px 이상일 때만 표시
+       if (canvas.width >= 784) {
+         ctx.font = '30px AntiquityPrint';
+         ctx.fillStyle = 'green';
+         ctx.textAlign = 'center';
+         ctx.fillText('LinguaGen', canvas.width / 2, 50);
+       }
+ 
+       ctx.font = '24px AntiquityPrint';
+       ctx.textAlign = 'center';
+       ctx.fillStyle = 'green';
+       const textX = canvas.width < 1350 ? canvas.width / 4 : canvas.width / 7;
+       // 784px 미만일 때는 Y 위치를 아래로 조정
+       const textY = canvas.width < 784 ? 65 : 30;
+       ctx.fillText(`${currentQuestion}/${totalQuestions}`, textX, textY);
+ 
+       ctx.font = '24px AntiquityPrint';
+       ctx.textAlign = 'center';
+       ctx.fillStyle = isExitHovered ? 'green' : 'white';
+       // Exit 버튼을 오른쪽으로 이동
+       const exitX = canvas.width < 784 ? canvas.width / 15 : canvas.width / 30;
+       ctx.fillText('Exit', exitX, 85);
+ 
+       // GameOver 텍스트 그리기
+       if (isGameOver) {
+         ctx.font = '48px AntiquityPrint';
+         ctx.textAlign = 'center';
+         ctx.fillStyle = `rgba(255, 0, 0, ${gameOverOpacity})`;
+         ctx.fillText('Game Over', canvas.width / 2, canvas.height / 1.7);
+       }
+ 
+       // GameClear 텍스트 그리기
+       if (isGameClear) {
+         ctx.font = '48px AntiquityPrint';
+         ctx.textAlign = 'center';
+         ctx.fillStyle = `rgba(0, 255, 0, ${gameClearOpacity})`;
+         ctx.fillText('Game Clear', canvas.width / 2, canvas.height / 1.7);
+       }
+       const soundImage = isSoundOn ? soundOnImage.current : soundOffImage.current;
+       if (soundImage && soundImage.complete) {
+         const iconSize = 30; // 아이콘 크기
+         const iconX = canvas.width < 784 ? canvas.width / 20 : canvas.width / 30 - iconSize / 2;
+         const iconY = 115;
+ 
+         // 마우스 호버 효과
+         if (isSoundHovered) {
+           ctx.globalAlpha = 0.7;
+         }
+ 
+         // 사운드 아이콘 그리기
+         ctx.drawImage(soundImage, iconX, iconY, iconSize, iconSize);
+         ctx.globalAlpha = 1.0;
+       }
+     }
+ 
+     animationRef.current = requestAnimationFrame(animate);
+   }, [bossState, bossFrameIndex, knightState, knightFrameIndex, bossHP, knightHP, drawHealthBar, currentQuestion, totalQuestions, isExitHovered, isGameOver, gameOverOpacity, isGameClear, gameClearOpacity, isSoundOn, isSoundHovered]);
+ 
+   const handleMouseMove = useCallback((event) => {
+     const canvas = canvasRef.current;
+     const rect = canvas.getBoundingClientRect();
+     const x = event.clientX - rect.left;
+     const y = event.clientY - rect.top;
+ 
+     // Exit 텍스트 영역 (좌상단)
+     const exitX = canvas.width / 30;
+     const exitY = 85;
+     const exitWidth = 40;
+     const exitHeight = 30;
+ 
+     // Sound 아이콘 영역
+     const iconSize = 30;
+     const soundX = canvas.width / 30 - iconSize / 2;
+     const soundY = 115;
+ 
+     // Exit 영역 체크 (텍스트 주변 영역을 약간 아래로)
+     setIsExitHovered(
+         x >= exitX - exitWidth / 2 &&
+         x <= exitX + exitWidth / 2 &&
+         y >= exitY - exitHeight / 2 + 30 &&
+         y <= exitY + exitHeight / 2 + 30
+     );
+ 
+     // Sound 아이콘 영역 체크 (영역을 약간 아래로)
+     setIsSoundHovered(
+         x >= soundX &&
+         x <= soundX + iconSize &&
+         y >= soundY + 75 &&
+         y <= soundY + iconSize + 75
+     );
+   }, []);
+ 
+   const handleExitClick = useCallback((event) => {
+     const canvas = canvasRef.current;
+     const rect = canvas.getBoundingClientRect();
+     const x = event.clientX - rect.left;
+     const y = event.clientY - rect.top;
+ 
+     const exitX = canvas.width / 30;
+     const exitY = 85;
+     const exitWidth = 40;
+     const exitHeight = 30;
+ 
+     // Exit 영역 클릭 감지
+     if (
+         x >= exitX - exitWidth / 2 &&
+         x <= exitX + exitWidth / 2 &&
+         y >= exitY - exitHeight / 2 + 30 &&
+         y <= exitY + exitHeight / 2 + 30
+     ) {
+       setShowExitDialog(true);
+     }
+   }, []);
+ 
+   const handleCanvasClick = useCallback((event) => {
+     const canvas = canvasRef.current;
+     const rect = canvas.getBoundingClientRect();
+     const x = event.clientX - rect.left;
+     const y = event.clientY - rect.top;
+ 
+     // Sound 아이콘 클릭 처리
+     const iconSize = 30;
+     const soundX = canvas.width / 30 - iconSize / 2;
+     const soundY = 115;
+ 
+     if (
+         x >= soundX &&
+         x <= soundX + iconSize &&
+         y >= soundY + 75 &&
+         y <= soundY + iconSize + 75
+     ) {
+       setIsSoundOn(prev => !prev);
+     }
+ 
+     // Exit 클릭 처리
+     handleExitClick(event); // 이벤트 객체를 전달
+   }, [handleExitClick]);
+ 
+   useEffect(() => {
+     const canvas = canvasRef.current;
+     canvas.width = canvas.parentElement.offsetWidth;
+     canvas.height = canvas.parentElement.offsetHeight * 0.6;
 
     // 폰트 로딩
     if (!fontLoadedRef.current) {

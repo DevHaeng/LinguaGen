@@ -206,7 +206,7 @@ const GameProgressPage = ({
         }
     }, [speechSynthesis]);
 
-    // 대화 텍스트 추출 함수 수정 - 화자 구분을 위한 추가 텍스트 포함
+    // 대화 ���트 추출 함수 수정 - 화자 구분을 위한 추가 텍스트 포함
     const extractDialogueText = useCallback((passage) => {
         if (!passage) return [];
         return passage.split(/(?=[AB]:)/).map(line => {
@@ -421,7 +421,7 @@ const GameProgressPage = ({
                 api.post(`/answers/session/${sessionIdentifier}/complete`)
                     .catch(error => console.error('Failed to complete session:', error));
             } else {
-                onNextQuestion(); // 부모 컴포넌트의 현재 문제 번호 업데이트
+                onNextQuestion(); // 부모 컴포넌트의 현재 문제 번호 업데트
                 setCurrentQuestionIndex(prevIndex => prevIndex + 1);
                 setUserAnswer('');
                 setSelectedAnswer(null);
@@ -574,23 +574,35 @@ const GameProgressPage = ({
         return (
             <button
                 onClick={handleSpeech}
-                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg 
-            ${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} 
-            text-white font-medium transition-colors duration-200`}
+                className={`inline-flex items-center justify-center gap-2 ${
+                    window.innerWidth < 620 
+                        ? 'px-2 py-1 text-sm' // 작은 화면에서 버튼 크기 축소
+                        : 'px-4 py-2'
+                } rounded-lg 
+                ${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} 
+                text-white font-medium transition-colors duration-200`}
             >
                 {isPlaying ? (
                     <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                            className={`${window.innerWidth < 620 ? 'h-4 w-4' : 'h-5 w-5'}`} 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor"
+                        >
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
-                        Stop Audio
+                        {window.innerWidth < 620 ? 'Stop' : 'Stop Audio'}
                     </>
                 ) : (
                     <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                            className={`${window.innerWidth < 620 ? 'h-4 w-4' : 'h-5 w-5'}`} 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor"
+                        >
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                         </svg>
-                        Play Audio
+                        {window.innerWidth < 620 ? 'Play' : 'Play Audio'}
                     </>
                 )}
             </button>
@@ -671,18 +683,20 @@ const GameProgressPage = ({
                     <h2 className="text-xl font-semibold text-gray-800">
                         {currentQuestion.question}
                     </h2>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger className="bg-transparent m-0 p-0">
-                                <h2 className="text-xl font-semibold text-gray-800 hover:text-gray-500">
-                                    {getDifficultyGrade(currentQuestion.diffGrade, currentQuestion.diffTier)}
-                                </h2>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{`${getDifficultyDescription(currentQuestion.diffGrade)} 난이도 (${getDifficultyGrade(currentQuestion.diffGrade, currentQuestion.diffTier)})`}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    {window.innerWidth >= 741 && ( // 741px 이상일 때만 표시
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger className="bg-transparent m-0 p-0">
+                                    <h2 className="text-xl font-semibold text-gray-800 hover:text-gray-500">
+                                        {getDifficultyGrade(currentQuestion.diffGrade, currentQuestion.diffTier)}
+                                    </h2>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{`${getDifficultyDescription(currentQuestion.diffGrade)} 난이도 (${getDifficultyGrade(currentQuestion.diffGrade, currentQuestion.diffTier)})`}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                 </div>
             );
         };
@@ -706,20 +720,34 @@ const GameProgressPage = ({
                                         onClick={() => !showFeedback && handleAnswer(index)}
                                         onMouseEnter={() => showFeedback && selectedAnswer === index && setHoveredAnswer(index)}
                                         onMouseLeave={() => setHoveredAnswer(null)}
-                                        className={`relative rounded-lg shadow-md transition-all duration-300 hover:shadow-lg flex flex-col ${showFeedback && selectedAnswer !== index ? 'cursor-not-allowed opacity-50' : ''}`}
+                                        className={`relative rounded-lg shadow-md transition-all duration-300 hover:shadow-lg flex flex-col ${
+                                            showFeedback && selectedAnswer !== index ? 'cursor-not-allowed opacity-50' : ''
+                                        }`}
                                         style={{
                                             backgroundColor: colors[index],
-                                            minHeight: '120px',
+                                            minHeight: window.innerHeight < 714 || window.innerWidth < 1200 ? '80px' : '120px',
                                             height: 'auto'
                                         }}
                                         whileHover={!showFeedback || selectedAnswer === index ? {scale: 1.02} : {}}
                                         whileTap={!showFeedback || selectedAnswer === index ? {scale: 0.98} : {}}
                                     >
-                                        <div className="w-full h-full flex flex-col items-center justify-start p-4">
-                                        <span className="text-2xl font-bold mb-2 text-white shrink-0">
-                                            {['A', 'B', 'C', 'D'][index]}
-                                        </span>
-                                            <p className="text-lg text-white w-full px-4 overflow-y-auto max-h-[120px] custom-scrollbar">
+                                        <div className={`w-full h-full flex flex-col items-center ${
+                                            window.innerHeight < 714 || window.innerWidth < 1200
+                                                ? 'p-1' // 작은 화면에서는 패딩 최소화
+                                                : 'p-4 justify-start' 
+                                        }`}>
+                                            {window.innerHeight >= 714 && window.innerWidth >= 1200 && ( // 두 조건 모두 만족할 때만 A,B,C,D 표시
+                                                <span className="text-2xl font-bold mb-2 text-white shrink-0">
+                                                    {['A', 'B', 'C', 'D'][index]}
+                                                </span>
+                                            )}
+                                            <p className={`text-white w-full flex items-center ${
+                                                window.innerWidth < 574
+                                                    ? 'text-xs px-1 h-full' // 574px 미만일 때 더 작은 텍스트
+                                                    : window.innerHeight < 714 || window.innerWidth < 1200
+                                                        ? 'text-sm px-2 h-full' // 기존 작은 화면 설정
+                                                        : 'text-lg px-4 max-h-[120px] overflow-y-auto custom-scrollbar' // 기본 설정
+                                            }`}>
                                                 {option}
                                             </p>
                                         </div>
@@ -738,8 +766,8 @@ const GameProgressPage = ({
                                                         <div className="absolute inset-0 flex items-center justify-center">
                                                             <Lottie
                                                                 options={feedback === true ? correctOptions : incorrectOptions}
-                                                                height={200}
-                                                                width={200}
+                                                                height={window.innerHeight < 714 || window.innerWidth < 1200 ? 100 : 200}
+                                                                width={window.innerHeight < 714 || window.innerWidth < 1200 ? 100 : 200}
                                                                 isClickToPauseDisabled={true}
                                                             />
                                                         </div>
@@ -750,14 +778,22 @@ const GameProgressPage = ({
                                                             initial={{opacity: 0, y: 10}}
                                                             animate={{opacity: 1, y: 0}}
                                                             exit={{opacity: 0, y: 10}}
-                                                            className="absolute bottom-4 flex gap-4 z-50"
+                                                            className={`absolute ${
+                                                                window.innerHeight < 714 || window.innerWidth < 1200 ? 'bottom-1' : 'bottom-4'
+                                                            } flex gap-1 z-50`}
                                                         >
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setShowExplanation(true);
                                                                 }}
-                                                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                                                className={`px-2 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors ${
+                                                                    window.innerWidth < 574
+                                                                        ? 'text-[10px]' // 574px 미만일 때 더 작은 텍스트
+                                                                        : window.innerHeight < 714 || window.innerWidth < 1200
+                                                                            ? 'text-xs'
+                                                                            : 'text-base'
+                                                                }`}
                                                             >
                                                                 해설 보기
                                                             </button>
@@ -766,7 +802,13 @@ const GameProgressPage = ({
                                                                     e.stopPropagation();
                                                                     handleNextQuestion();
                                                                 }}
-                                                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                                                className={`px-2 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors ${
+                                                                    window.innerWidth < 574
+                                                                        ? 'text-[10px]' // 574px 미만일 때 더 작은 텍스트
+                                                                        : window.innerHeight < 714 || window.innerWidth < 1200
+                                                                            ? 'text-xs'
+                                                                            : 'text-base'
+                                                                }`}
                                                             >
                                                                 다음 문제
                                                             </button>

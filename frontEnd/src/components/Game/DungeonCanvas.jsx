@@ -160,8 +160,21 @@ const DungeonCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    // 캔버스 초기화
+    // 캔버스 초기화를 확실히 하고
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 텍스트 렌더링을 부드럽게
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    ctx.font = '24px AntiquityPrint';
+    ctx.textAlign = 'center';
+    // 텍스트 안티앨리어싱 적용
+    ctx.textBaseline = 'middle';
+    const textX = canvas.width < 1350 ? canvas.width / 4 : canvas.width / 7;
+    const textY = canvas.width < 784 ? 65 : 30;
+    // 텍스트 렌더링
+    ctx.fillText(`${currentQuestion}/${totalQuestions}`, Math.round(textX), Math.round(textY));
 
     // 배경 그리기
     if (backgroundRef.current.complete) {
@@ -178,15 +191,19 @@ const DungeonCanvas = () => {
 
     const bossImage = bossImages[bossFrameIndex];
     if (bossImage && bossImage.complete) {
-      const bossScale = 2; // 보스 크기 증가
+      const bossScale = canvas.width < 784 ? 1.5 : 2;
       const bossWidth = (bossImage.width + 100) * bossScale;
       const bossHeight = bossImage.height * bossScale;
+      // 784px 미만일 때는 더 가운데로 이동
+      const bossX = canvas.width < 784 
+        ? canvas.width / 8  // 보스 위치 유지
+        : canvas.width / 2.5;
       ctx.drawImage(
-          bossImage,
-          canvas.width / 2.5, // 보스를 오른쪽으로 이동
-          canvas.height - bossHeight,
-          bossWidth,
-          bossHeight
+        bossImage,
+        bossX,
+        canvas.height - bossHeight,
+        bossWidth,
+        bossHeight
       );
     }
 
@@ -204,17 +221,22 @@ const DungeonCanvas = () => {
       return; // 이미지가 로드되지 않았으면 그리기 건너뛰기
     }
 
+    // 기사 스프라이트 그리기
     const knightImage = knightImages[knightFrameIndex];
     if (knightImage && knightImage.complete) {
-      const knightScale = 2; // 기사 크기 증가
+      const knightScale = canvas.width < 784 ? 1.5 : 2;
       const knightWidth = (knightImage.width + 100) * knightScale;
       const knightHeight = knightImage.height * knightScale;
+      // 784px 미만일 때는 보스 기준으로 왼쪽에 배치
+      const knightX = canvas.width < 784
+        ? -180  // 직접 음수 값을 지정하여 더 왼쪽으로 이동
+        : canvas.width / 1.5 - knightWidth - 90;
       ctx.drawImage(
-          knightImage,
-          canvas.width / 1.5 - knightWidth - 90, // 기사를 왼쪽으로 이동
-          canvas.height - knightHeight,
-          knightWidth,
-          knightHeight
+        knightImage,
+        knightX,
+        canvas.height - knightHeight,
+        knightWidth,
+        knightHeight
       );
     }
 
@@ -224,19 +246,28 @@ const DungeonCanvas = () => {
 
     // 텍스트 그리기
     if (fontLoadedRef.current) {
-      ctx.font = '30px AntiquityPrint';
-      ctx.fillStyle = 'green';
-      ctx.textAlign = 'center';
-      ctx.fillText('LinguaGen', canvas.width / 2, 50);
+      // LinguaGen 텍스트는 784px 이상일 때만 표시
+      if (canvas.width >= 784) {
+        ctx.font = '30px AntiquityPrint';
+        ctx.fillStyle = 'green';
+        ctx.textAlign = 'center';
+        ctx.fillText('LinguaGen', canvas.width / 2, 50);
+      }
 
       ctx.font = '24px AntiquityPrint';
       ctx.textAlign = 'center';
-      ctx.fillText(`${currentQuestion}/${totalQuestions}`, canvas.width / 7, 30);
+      ctx.fillStyle = 'green';
+      const textX = canvas.width < 1350 ? canvas.width / 4 : canvas.width / 7;
+      // 784px 미만일 때는 Y 위치를 아래로 조정
+      const textY = canvas.width < 784 ? 65 : 30;
+      ctx.fillText(`${currentQuestion}/${totalQuestions}`, textX, textY);
 
       ctx.font = '24px AntiquityPrint';
       ctx.textAlign = 'center';
       ctx.fillStyle = isExitHovered ? 'green' : 'white';
-      ctx.fillText('Exit', canvas.width / 30, 85);
+      // Exit 버튼을 오른쪽으로 이동
+      const exitX = canvas.width < 784 ? canvas.width / 15 : canvas.width / 30;
+      ctx.fillText('Exit', exitX, 85);
 
       // GameOver 텍스트 그리기
       if (isGameOver) {
@@ -256,7 +287,7 @@ const DungeonCanvas = () => {
       const soundImage = isSoundOn ? soundOnImage.current : soundOffImage.current;
       if (soundImage && soundImage.complete) {
         const iconSize = 30; // 아이콘 크기
-        const iconX = canvas.width / 30 - iconSize / 2;
+        const iconX = canvas.width < 784 ? canvas.width / 20 : canvas.width / 30 - iconSize / 2;
         const iconY = 115;
 
         // 마우스 호버 효과
@@ -358,7 +389,7 @@ const DungeonCanvas = () => {
     canvas.width = canvas.parentElement.offsetWidth;
     canvas.height = canvas.parentElement.offsetHeight * 0.6;
 
-    // 폰트 로딩
+    // 폰트 딩
     if (!fontLoadedRef.current) {
       const font = new FontFace('AntiquityPrint', 'url(/assets/CanvasImage/font/Antiquity-print.ttf)');
       font.load().then((loadedFont) => {

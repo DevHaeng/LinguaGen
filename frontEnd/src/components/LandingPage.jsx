@@ -75,6 +75,33 @@ const LandingPage = () => {
     isLeaving,
     setIsLeaving,
   } = useStore()
+  const [language, setLanguage] = useState('Korean');
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      console.log('Key pressed:', event.code);
+      
+      if (event.key === 'HangulMode' || 
+          event.code === 'Lang1' || 
+          event.code === 'Lang2' ||
+          (event.altKey && event.code === 'AltRight') ||
+          event.code === 'CapsLock' ||
+          event.code === 'Process') {
+        console.log('Language toggle triggered');
+        setLanguage(prev => prev === 'Korean' ? 'English' : 'Korean');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const handleLanguageToggle = () => {
+    setLanguage(prev => prev === 'Korean' ? 'English' : 'Korean');
+  };
 
   const handleStartClick = useCallback(() => {
     setIsLeaving(true)
@@ -109,10 +136,17 @@ const LandingPage = () => {
       </div>
       <div className='absolute top-4 left-4 w-auto h-full bg-transparent z-10 flex flex-col justify-between items-start'>
         <p className='text-white text-5xl kanit-semibold'>LinguaGen</p>
-        <p className='text-white text-xl kanit-semibold mb-8'>made by Team-A</p>
+        <p className='text-white text-xl kanit-semibold mb-8'>made by Team-Squad</p>
       </div>
-      <div className='absolute bottom-4 right-4 w-auto h-full bg-transparent z-10 flex flex-col justify-end items-end'>
-        <p className='text-white text-xl kanit-semibold'>{"</"}Korean{">"}</p>
+      <div 
+        className='absolute bottom-4 right-4 w-auto h-auto bg-transparent z-10 
+                   flex flex-col justify-end items-end cursor-pointer
+                   hover:opacity-80 transition-opacity duration-200'
+        onClick={handleLanguageToggle}
+      >
+        <p className='text-white text-xl kanit-semibold'>
+          {"</"}{language}{">"}
+        </p>
       </div>
 
       <div className="absolute lg:right-20 lg:top-1/2 lg:-translate-y-1/2 
@@ -160,12 +194,6 @@ const LandingPage = () => {
                             text-xl w-full lg:w-64 h-16">
             <span>Login</span>
             <span>로그인 하러 가기</span>
-          </button>
-          <button onClick={handleLoginClick} 
-                  className="custom-btn btn-12 flex justify-center items-center 
-                            text-xl w-full lg:w-64 h-16">
-            <span>Readme!!</span>
-            <span>Documentation</span>
           </button>
         </div>
       </div>

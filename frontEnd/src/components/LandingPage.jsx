@@ -114,6 +114,10 @@ const LandingPage = () => {
     navigate('/login')
   }, [navigate])
 
+  const handleIntroduceClick = useCallback(() => {
+    navigate('/introduce')
+  }, [navigate])
+
   return (
     <div className="landing-page">
       <div id="canvasWrapper" className={`${isLeaving ? 'fade-out' : ''}`}>
@@ -194,6 +198,12 @@ const LandingPage = () => {
                             text-xl w-full lg:w-64 h-16">
             <span>Login</span>
             <span>로그인 하러 가기</span>
+          </button>
+          <button onClick={handleIntroduceClick} 
+                  className="custom-btn btn-12 flex justify-center items-center 
+                            text-xl w-full lg:w-64 h-16">
+            <span>Introduce</span>
+            <span>Contact Us</span>
           </button>
         </div>
       </div>

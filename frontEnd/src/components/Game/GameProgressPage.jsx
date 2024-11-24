@@ -206,7 +206,7 @@ const GameProgressPage = ({
         }
     }, [speechSynthesis]);
 
-    // 대화 ���트 추출 함수 수정 - 화자 구분을 위한 추가 텍스트 포함
+    // 대화 트 추출 함수 수정 - 화자 구분을 위한 추가 텍스트 포함
     const extractDialogueText = useCallback((passage) => {
         if (!passage) return [];
         return passage.split(/(?=[AB]:)/).map(line => {
@@ -421,7 +421,7 @@ const GameProgressPage = ({
                 api.post(`/answers/session/${sessionIdentifier}/complete`)
                     .catch(error => console.error('Failed to complete session:', error));
             } else {
-                onNextQuestion(); // 부모 컴포넌트의 현재 문제 번호 업데트
+                onNextQuestion(); // 부모 ��포넌트의 현재 문제 번호 업데트
                 setCurrentQuestionIndex(prevIndex => prevIndex + 1);
                 setUserAnswer('');
                 setSelectedAnswer(null);
@@ -876,45 +876,58 @@ const GameProgressPage = ({
                                             onMouseEnter={() => setHoveredAnswer(true)}
                                             onMouseLeave={() => setHoveredAnswer(false)}
                                         >
-                                            <div className={`absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center`}>
+                                            <div className={`absolute inset-0 bg-black bg-opacity-70 
+                                                flex flex-col items-center justify-center`}>
                                                 {showAnimation && (
                                                     <div className="mb-4">
                                                         <Lottie
                                                             options={feedback ? correctOptions : incorrectOptions}
-                                                            height={200}
-                                                            width={200}
+                                                            height={window.innerHeight < 714 ? 150 : 200}
+                                                            width={window.innerHeight < 714 ? 150 : 200}
                                                             isClickToPauseDisabled={true}
                                                         />
                                                     </div>
                                                 )}
 
-                                                {hoveredAnswer && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: 10 }}
-                                                        className="flex gap-4 mt-4"
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: 10 }}
+                                                    className={`flex gap-2 ${
+                                                        window.innerHeight < 714 
+                                                            ? 'absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2' 
+                                                            : 'mt-4'
+                                                    }`}
+                                                >
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowExplanation(true);
+                                                        }}
+                                                        className={`${
+                                                            window.innerHeight < 714
+                                                                ? 'px-3 py-2 text-sm'
+                                                                : 'px-6 py-3 text-lg'
+                                                        } bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                                                        transition-colors font-medium`}
                                                     >
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setShowExplanation(true);
-                                                            }}
-                                                            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-lg font-medium"
-                                                        >
-                                                            해설 보기
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleNextQuestion();
-                                                            }}
-                                                            className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-lg font-medium"
-                                                        >
-                                                            다음 문제
-                                                        </button>
-                                                    </motion.div>
-                                                )}
+                                                        해설 보기
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleNextQuestion();
+                                                        }}
+                                                        className={`${
+                                                            window.innerHeight < 714
+                                                                ? 'px-3 py-2 text-sm'
+                                                                : 'px-6 py-3 text-lg'
+                                                        } bg-green-500 text-white rounded-lg hover:bg-green-600 
+                                                        transition-colors font-medium`}
+                                                    >
+                                                        다음 문제
+                                                    </button>
+                                                </motion.div>
                                             </div>
                                         </motion.div>
                                     )}
